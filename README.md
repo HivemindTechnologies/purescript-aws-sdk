@@ -1,0 +1,1 @@
+# purescript-aws-sdk
