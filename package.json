@@ -1,0 +1,15 @@
+{
+  "name": "purescript-aws-sdk",
+  "repository": "purescript-aws-sdk",
+  "license": "MIT",
+  "description": "Purescript wrapper for typescript API AWS-sdk",
+  "version": "0.1.0",
+  "devDependencies": {
+    "purescript": "^0.13.8",
+    "purty": "^6.2.0",
+    "spago": "^0.15.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.665.0"
+  }
+}
