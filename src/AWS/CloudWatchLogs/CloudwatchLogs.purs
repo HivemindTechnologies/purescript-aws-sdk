@@ -28,6 +28,11 @@ type InternalMakeClientParams
     , sessionToken :: Nullable String
     }
 
+foreign import makeDefaultClientImpl :: Effect CloudwatchLogs
+
+makeDefaultClient :: Effect CloudwatchLogs
+makeDefaultClient = makeDefaultClientImpl
+
 foreign import makeClientImpl :: Fn1 InternalMakeClientParams (Effect CloudwatchLogs)
 
 makeClient :: Region -> AccessKeyId -> SecretAccessKey -> Maybe SessionToken -> Effect CloudwatchLogs
@@ -44,13 +49,12 @@ type DescribeLogGroupsOutput
         Array
           { arn :: String
           , creationTime :: Number
-          , kmsKeyId :: String
+          , kmsKeyId :: Maybe String
           , logGroupName :: String
           , metricFilterCount :: Number
-          , retentionInDays :: Number
-          , storedBytes :: Number
+          , retentionInDays :: Maybe Number
+          , storedBytes :: Number 
           }
-    , nextToken :: String
     }
 
 foreign import describeLogGroupsImpl :: Fn1 CloudwatchLogs (Effect (Promise String))
