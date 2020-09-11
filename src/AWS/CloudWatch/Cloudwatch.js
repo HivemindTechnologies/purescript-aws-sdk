@@ -1,9 +1,9 @@
 "use strict"
 
-var AWS = require('aws-sdk')
+var AWS = require('aws-sdk/clients/cloudwatch')
 
 exports.makeClientImpl = (params) =>
-  () => new AWS.CloudWatch(params)
+  () => new CloudWatch(params)
 
 exports.getMetricStatisticsImpl = (cw, p) =>
   () => cw.getMetricStatistics(p).promise().then(JSON.stringify)

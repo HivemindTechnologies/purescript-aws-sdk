@@ -1,9 +1,9 @@
 "use strict"
 
-var AWS = require('aws-sdk')
+var AWS = require('aws-sdk/clients/ec2')
 
 exports.makeClientImpl = (params) =>
-  () => new AWS.EC2(params)
+  () => new EC2(params)
 
 exports.describeInstancesImpl = (ec2) =>
   () => ec2.describeInstances().promise()
