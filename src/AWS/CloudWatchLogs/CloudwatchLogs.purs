@@ -1,10 +1,11 @@
 module AWS.CloudwatchLogs where
 
 import Prelude
+
 import AWS.Core (AccessKeyId(..), Region(..), SecretAccessKey(..), SessionToken(..))
 import Control.Promise (Promise)
 import Control.Promise as Promise
-import Data.Bifunctor (bimap)
+import Data.Bifunctor (lmap)
 import Data.Either (Either)
 import Data.Foldable (fold)
 import Data.Function.Uncurried (Fn1, runFn1)
@@ -61,7 +62,7 @@ describeLogGroups cw = liftEffect curried >>= Promise.toAff <#> parse
   handleError = map show >>> fold
 
   parse :: String -> Either String InternalDescribeLogGroupsOutput
-  parse = readJSON >>> bimap handleError identity
+  parse = readJSON >>> lmap handleError
 
   curried :: Effect (Promise String)
   curried = runFn1 describeLogGroupsImpl cw
