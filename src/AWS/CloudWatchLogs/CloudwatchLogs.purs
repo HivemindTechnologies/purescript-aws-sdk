@@ -39,7 +39,7 @@ makeClient r a s t =
     , sessionToken: toNullable $ map (un SessionToken) t
     }
 
-type InternalDescribeLogGroupsOutput
+type DescribeLogGroupsOutput
   = { logGroups ::
         Array
           { arn :: String
@@ -55,13 +55,13 @@ type InternalDescribeLogGroupsOutput
 
 foreign import describeLogGroupsImpl :: Fn1 CloudwatchLogs (Effect (Promise String))
 
-describeLogGroups :: CloudwatchLogs -> Aff (Either String InternalDescribeLogGroupsOutput)
+describeLogGroups :: CloudwatchLogs -> Aff (Either String DescribeLogGroupsOutput)
 describeLogGroups cw = liftEffect curried >>= Promise.toAff <#> parse
   where
   handleError :: NonEmptyList ForeignError -> String
   handleError = map show >>> fold
 
-  parse :: String -> Either String InternalDescribeLogGroupsOutput
+  parse :: String -> Either String DescribeLogGroupsOutput
   parse = readJSON >>> lmap handleError
 
   curried :: Effect (Promise String)
