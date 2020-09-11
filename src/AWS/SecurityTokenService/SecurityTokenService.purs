@@ -7,6 +7,7 @@ import Control.Promise as Promise
 import Data.Function.Uncurried (Fn1, Fn2, runFn2)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un, class Newtype)
+import Data.Nullable as Nullable
 import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -38,7 +39,7 @@ makeDefaultClient = makeDefaultClientImpl
 
 type InternalAssumeRoleParams
   = { "RoleArn" :: String
-    , "ExternalId" :: String
+    , "ExternalId" :: Nullable String
     , "RoleSessionName" :: String
     }
 
@@ -65,7 +66,7 @@ derive instance ntRoleSessionName :: Newtype RoleSessionName _
 
 foreign import assumeRoleImpl :: Fn2 STS InternalAssumeRoleParams (Effect (Promise InternalAssumeRoleResponse))
 
-assumeRole :: STS -> Arn -> ExternalId -> RoleSessionName -> Aff Credentials
+assumeRole :: STS -> Arn -> Maybe ExternalId -> RoleSessionName -> Aff Credentials
 assumeRole sts roleArn externalId roleSessionName = toExternal =<< Promise.toAffE curried
   where
   toCredentials :: InternalAssumeRoleResponse -> Maybe Credentials
@@ -86,7 +87,7 @@ assumeRole sts roleArn externalId roleSessionName = toExternal =<< Promise.toAff
   params :: InternalAssumeRoleParams
   params =
     { "RoleArn": un Arn roleArn
-    , "ExternalId": un ExternalId externalId
+    , "ExternalId": Nullable.toNullable $ externalId <#> un ExternalId
     , "RoleSessionName": un RoleSessionName roleSessionName
     }
 
