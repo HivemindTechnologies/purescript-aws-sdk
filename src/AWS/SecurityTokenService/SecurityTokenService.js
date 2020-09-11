@@ -1,12 +1,13 @@
 "use strict"
 
-var AWS = require('aws-sdk')
+var AWS = require('aws-sdk/clients/sts')
+const STS = require('aws-sdk/clients/sts')
 
-exports.makeDefaultClientImpl = () => new AWS.STS()
+exports.makeDefaultClientImpl = () => new STS()
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/STS.html
 exports.makeClientImpl = (params) =>
-  () => new AWS.STS(params)
+  () => new STS(params)
 
 
 exports.assumeRoleImpl = (sts, params) =>
