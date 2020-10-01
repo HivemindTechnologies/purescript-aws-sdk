@@ -1,14 +1,15 @@
 module AWS.SecurityTokenService where
 
 import Prelude
+
 import AWS.Core (AccessKeyId(..), Arn(..), Credentials, ExternalId(..), Region(..), SecretAccessKey(..), SessionToken(..))
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Function.Uncurried (Fn1, Fn2, runFn2)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un, class Newtype)
-import Data.Nullable as Nullable
 import Data.Nullable (Nullable, toMaybe)
+import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -20,18 +21,20 @@ type InternalMakeClientParams
   = { region :: String
     , secretAccessKey :: String
     , accessKeyId :: String
+    , sessionToken :: String
     }
 
 foreign import makeClientImpl :: Fn1 InternalMakeClientParams (Effect STS)
 
 foreign import makeDefaultClientImpl :: Effect STS
 
-makeClient :: Region -> AccessKeyId -> SecretAccessKey -> Effect STS
-makeClient r a s =
+makeClient :: Region -> AccessKeyId -> SecretAccessKey -> SessionToken -> Effect STS
+makeClient r a s t =
   makeClientImpl
     { region: un Region r
     , secretAccessKey: un SecretAccessKey s
     , accessKeyId: un AccessKeyId a
+    , sessionToken: un SessionToken t
     }
 
 makeDefaultClient :: Effect STS

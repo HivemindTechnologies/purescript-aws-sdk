@@ -1,6 +1,5 @@
 "use strict"
 
-var AWS = require('aws-sdk/clients/sts')
 const STS = require('aws-sdk/clients/sts')
 
 exports.makeDefaultClientImpl = () => new STS()
