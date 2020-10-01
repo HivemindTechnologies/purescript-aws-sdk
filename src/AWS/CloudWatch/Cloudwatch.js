@@ -1,6 +1,6 @@
 "use strict"
 
-var AWS = require('aws-sdk/clients/cloudwatch')
+const CloudWatch = require('aws-sdk/clients/cloudwatch')
 
 exports.makeClientImpl = (params) =>
   () => new CloudWatch(params)

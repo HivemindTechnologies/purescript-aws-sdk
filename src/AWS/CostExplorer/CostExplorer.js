@@ -1,6 +1,6 @@
 "use strict"
 
-var AWS = require('aws-sdk/clients/costexplorer')
+const CostExplorer = require('aws-sdk/clients/costexplorer')
 
 exports.makeClientImpl = (params) =>
   () => new CostExplorer(params)

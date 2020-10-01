@@ -1,6 +1,6 @@
 "use strict"
 
-var AWS = require('aws-sdk/clients/cloudwatchlogs')
+const CloudWatchLogs = require('aws-sdk/clients/cloudwatchlogs')
 
 exports.makeDefaultClientImpl = () => new CloudWatchLogs()
 
