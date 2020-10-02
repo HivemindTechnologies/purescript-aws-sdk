@@ -8,7 +8,7 @@ exports.makeClientImpl = (params) =>
   () => new CloudWatchLogs(params)
 
 exports.describeLogGroupsImpl = (cw) =>
-  () => cw.describeLogGroups().promise().then(JSON.stringify)
+  () => cw.describeLogGroups().promise()
 
 exports.describeLogStreamsImpl = (cw, groupName) =>
   () => cw.describeLogStreams({ logGroupName: groupName }).promise()
