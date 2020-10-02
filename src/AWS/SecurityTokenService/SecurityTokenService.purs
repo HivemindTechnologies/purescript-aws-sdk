@@ -1,7 +1,6 @@
 module AWS.SecurityTokenService where
 
 import Prelude
-
 import AWS.Core (AccessKeyId(..), Arn(..), Credentials, ExternalId(..), Region(..), SecretAccessKey(..), SessionToken(..))
 import Control.Promise (Promise)
 import Control.Promise as Promise
