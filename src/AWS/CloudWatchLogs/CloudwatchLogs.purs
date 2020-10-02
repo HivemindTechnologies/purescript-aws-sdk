@@ -1,25 +1,20 @@
-module AWS.CloudwatchLogs where
+module CloudWatchLogs where
 
 import Prelude
 
 import AWS.Core (AccessKeyId(..), Region(..), SecretAccessKey(..), SessionToken(..))
 import Control.Promise (Promise)
 import Control.Promise as Promise
-import Data.Bifunctor (lmap)
-import Data.Either (Either)
-import Data.Foldable (fold)
-import Data.Function.Uncurried (Fn1, runFn1)
-import Data.List.Types (NonEmptyList)
+import Data.Function.Uncurried (Fn1, runFn1, Fn2, runFn2)
 import Data.Maybe (Maybe)
 import Data.Newtype (un)
 import Data.Nullable (Nullable, toNullable)
+import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
-import Foreign (ForeignError)
-import Simple.JSON (readJSON)
 
-foreign import data CloudwatchLogs :: Type
+foreign import data API :: Type
 
 type InternalMakeClientParams
   = { region :: String
@@ -28,14 +23,14 @@ type InternalMakeClientParams
     , sessionToken :: Nullable String
     }
 
-foreign import makeDefaultClientImpl :: Effect CloudwatchLogs
+foreign import makeDefaultClientImpl :: Effect API
 
-makeDefaultClient :: Effect CloudwatchLogs
+makeDefaultClient :: Effect API
 makeDefaultClient = makeDefaultClientImpl
 
-foreign import makeClientImpl :: Fn1 InternalMakeClientParams (Effect CloudwatchLogs)
+foreign import makeClientImpl :: Fn1 InternalMakeClientParams (Effect API)
 
-makeClient :: Region -> AccessKeyId -> SecretAccessKey -> Maybe SessionToken -> Effect CloudwatchLogs
+makeClient :: Region -> AccessKeyId -> SecretAccessKey -> Maybe SessionToken -> Effect API
 makeClient r a s t =
   makeClientImpl
     { region: (un Region r)
@@ -44,29 +39,87 @@ makeClient r a s t =
     , sessionToken: toNullable $ map (un SessionToken) t
     }
 
-type DescribeLogGroupsOutput
-  = { logGroups ::
-        Array
-          { arn :: String
-          , creationTime :: Number
-          , kmsKeyId :: Maybe String
-          , logGroupName :: String
-          , metricFilterCount :: Number
-          , retentionInDays :: Maybe Number
-          , storedBytes :: Number 
+type InternalDescribeLogGroupsResponse
+  = { logGroups :: Array InternalLogGroup }
+
+type DescribeLogGroupsResponse
+  = { logGroups :: Array LogGroup }
+
+type InternalLogGroup 
+  = 
+          { arn :: Nullable String
+          , creationTime :: Nullable Number
+          , kmsKeyId ::  Nullable String
+          , logGroupName :: Nullable String
+          , metricFilterCount :: Nullable Number
+          , retentionInDays :: Nullable Number
+          , storedBytes :: Nullable Number 
           }
-    }
 
-foreign import describeLogGroupsImpl :: Fn1 CloudwatchLogs (Effect (Promise String))
+-- todo: Number to TimeStamp
+type LogGroup 
+  = 
+          { creationTime :: Maybe Number
+          , logGroupName :: Maybe String
+          , retentionInDays :: Maybe Number
+          , storedBytes :: Maybe Number 
+          }
 
-describeLogGroups :: CloudwatchLogs -> Aff (Either String DescribeLogGroupsOutput)
-describeLogGroups cw = liftEffect curried >>= Promise.toAff <#> parse
+type InternalDescribeLogStreamsResponse
+  = { logStreams :: Array InternalLogStream }
+
+type InternalLogStream 
+ = { creationTime :: Nullable Number
+ , firstEventTimestamp:: Nullable Number
+ , lastEventTimestamp:: Nullable Number
+ , lastIngestionTime:: Nullable Number
+ }
+
+-- todo: Number to TimeStamp
+type LogStream 
+ = { creationTime :: Maybe Number
+ , firstEventTimestamp:: Maybe Number
+ , lastEventTimestamp:: Maybe Number
+ , lastIngestionTime:: Maybe Number
+
+ }
+type DescribeLogStreamsResponse
+  = { logStreams :: Array LogStream }
+
+foreign import describeLogGroupsImpl :: Fn1 API (Effect (Promise InternalDescribeLogGroupsResponse))
+
+describeLogGroups :: API -> Aff DescribeLogGroupsResponse
+describeLogGroups api = liftEffect curried >>= Promise.toAff <#> toExternal
   where
-  handleError :: NonEmptyList ForeignError -> String
-  handleError = map show >>> fold
+  toExternal :: InternalDescribeLogGroupsResponse -> DescribeLogGroupsResponse
+  toExternal {logGroups: internal} = {logGroups : internal <#> toExternalLogGroup} 
 
-  parse :: String -> Either String DescribeLogGroupsOutput
-  parse = readJSON >>> lmap handleError
+  toExternalLogGroup :: InternalLogGroup -> LogGroup
+  toExternalLogGroup internal = 
+      { creationTime : Nullable.toMaybe internal.creationTime
+      , logGroupName : Nullable.toMaybe internal.logGroupName
+      , retentionInDays : Nullable.toMaybe internal.retentionInDays
+      , storedBytes : Nullable.toMaybe internal.storedBytes 
+      } 
 
-  curried :: Effect (Promise String)
-  curried = runFn1 describeLogGroupsImpl cw
+  curried :: Effect (Promise InternalDescribeLogGroupsResponse)
+  curried = runFn1 describeLogGroupsImpl api
+
+foreign import describeLogStreamsImpl :: Fn2 API String (Effect (Promise InternalDescribeLogStreamsResponse))
+
+describeLogStreams :: API -> String -> Aff (DescribeLogStreamsResponse)
+describeLogStreams api name = liftEffect (curried api name) >>= Promise.toAff <#> toExternal
+  where
+  toExternal :: InternalDescribeLogStreamsResponse -> DescribeLogStreamsResponse
+  toExternal {logStreams: internal} = {logStreams : internal <#> toExternalLogStream} 
+
+  toExternalLogStream :: InternalLogStream -> LogStream
+  toExternalLogStream internal = 
+      { creationTime : Nullable.toMaybe internal.creationTime
+      , firstEventTimestamp : Nullable.toMaybe internal.firstEventTimestamp
+      , lastEventTimestamp : Nullable.toMaybe internal.lastEventTimestamp
+      , lastIngestionTime : Nullable.toMaybe internal.lastIngestionTime 
+      } 
+
+  curried :: API -> String -> Effect (Promise InternalDescribeLogStreamsResponse)
+  curried  = (runFn2 describeLogStreamsImpl) 

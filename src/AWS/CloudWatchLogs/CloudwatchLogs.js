@@ -9,3 +9,6 @@ exports.makeClientImpl = (params) =>
 
 exports.describeLogGroupsImpl = (cw) =>
   () => cw.describeLogGroups().promise().then(JSON.stringify)
+
+exports.describeLogStreamsImpl = (cw, groupName) =>
+  () => cw.describeLogStreams({ logGroupName: groupName }).promise()
