@@ -21,9 +21,17 @@ type InternalMakeClientParams
     , secretAccessKey :: String
     , accessKeyId :: String
     , sessionToken :: String
+    , stsRegionalEndpoints :: String
+    }
+
+type InternalMakeClientRegion
+  = { region :: String
+    , stsRegionalEndpoints :: String
     }
 
 foreign import makeClientImpl :: Fn1 InternalMakeClientParams (Effect STS)
+
+foreign import makeClientImpl2 :: Fn1 InternalMakeClientRegion (Effect STS)
 
 foreign import makeDefaultClientImpl :: Effect STS
 
@@ -34,6 +42,14 @@ makeClient r a s t =
     , secretAccessKey: un SecretAccessKey s
     , accessKeyId: un AccessKeyId a
     , sessionToken: un SessionToken t
+    , stsRegionalEndpoints: "regional"
+    }
+
+makeClientWithRegion :: Region  -> Effect STS
+makeClientWithRegion r =
+  makeClientImpl2
+    { region: un Region r
+    , stsRegionalEndpoints: "regional"
     }
 
 makeDefaultClient :: Effect STS
