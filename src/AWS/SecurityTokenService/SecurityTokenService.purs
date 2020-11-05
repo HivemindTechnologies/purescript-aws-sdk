@@ -12,48 +12,53 @@ import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
 import Effect.Exception (throw)
+import Foreign (Foreign)
+import Justifill (justifill)
+import Justifill.Fillable (class FillableFields)
+import Justifill.Justifiable (class JustifiableFields)
+import Prim.Row (class Union)
+import Prim.RowList (class RowToList)
+import Record (merge)
+import Simple.JSON (class WriteForeign, write, writeImpl)
 
 foreign import data STS :: Type
 
-type InternalMakeClientParams
-  = { region :: String
-    , secretAccessKey :: String
-    , accessKeyId :: String
-    , sessionToken :: String
-    , stsRegionalEndpoints :: String
-    }
+data StsRegionalEndpoint = Regional | Legacy
+instance writeForeignStsRegionalEndpoint :: WriteForeign StsRegionalEndpoint where
+  writeImpl Regional = writeImpl "regional"
+  writeImpl Legacy = writeImpl "legacy"
 
-type InternalMakeClientRegion
-  = { region :: String
-    , stsRegionalEndpoints :: String
-    }
+type PropsR
+  = ( accessKey :: Maybe AccessKeyId
+    , secretKey :: Maybe SecretAccessKey
+    , region :: Maybe Region
+    , stsRegionalEndpoint :: Maybe StsRegionalEndpoint
+    )
 
-foreign import makeClientImpl :: Fn1 InternalMakeClientParams (Effect STS)
+type Props = Record PropsR
 
-foreign import makeClientImpl2 :: Fn1 InternalMakeClientRegion (Effect STS)
+foreign import makeClientImpl :: Foreign -> Effect STS
 
-foreign import makeDefaultClientImpl :: Effect STS
+makeClientHelper :: Props -> Effect STS
+makeClientHelper = write >>> makeClientImpl
 
-makeClient :: Region -> AccessKeyId -> SecretAccessKey -> SessionToken -> Effect STS
-makeClient r a s t =
-  makeClientImpl
-    { region: un Region r
-    , secretAccessKey: un SecretAccessKey s
-    , accessKeyId: un AccessKeyId a
-    , sessionToken: un SessionToken t
-    , stsRegionalEndpoints: "regional"
-    }
+makeClient ::
+  forall t3 t4 t5 t6 t7.
+  RowToList t5 t6 =>
+  FillableFields t6 () t5 =>
+  Union
+    t3
+    t5
+    PropsR =>
+  RowToList t4 t7 =>
+  JustifiableFields t7 t4 () t3 =>
+  Record t4 ->
+  Effect STS
+makeClient r = ((justifill r) :: Props) # makeClientHelper
 
-makeClientWithRegion :: Region  -> Effect STS
-makeClientWithRegion r =
-  makeClientImpl2
-    { region: un Region r
-    , stsRegionalEndpoints: "regional"
-    }
-
-makeDefaultClient :: Effect STS
-makeDefaultClient = makeDefaultClientImpl
+makeRegionalClient = merge { stsRegionalEndpoint: Just Regional } >>> makeClient
 
 type InternalAssumeRoleParams
   = { "RoleArn" :: String
@@ -110,3 +115,4 @@ assumeRole sts roleArn externalId roleSessionName = toExternal =<< Promise.toAff
     }
 
   curried = runFn2 assumeRoleImpl sts params
+
