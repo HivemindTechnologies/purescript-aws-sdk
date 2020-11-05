@@ -31,8 +31,8 @@ instance writeForeignStsRegionalEndpoint :: WriteForeign StsRegionalEndpoint whe
   writeImpl Legacy = writeImpl "legacy"
 
 type PropsR
-  = ( accessKey :: Maybe AccessKeyId
-    , secretKey :: Maybe SecretAccessKey
+  = ( accessKeyId :: Maybe AccessKeyId
+    , secretAccessKey :: Maybe SecretAccessKey
     , region :: Maybe Region
     , sessionToken :: Maybe SessionToken
     , stsRegionalEndpoint :: Maybe StsRegionalEndpoint
