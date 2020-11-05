@@ -1,10 +1,10 @@
 module AWS.SecurityTokenService where
 
 import Prelude
-import AWS.Core (AccessKeyId(..), Arn(..), Credentials, ExternalId(..), Region(..), SecretAccessKey(..), SessionToken(..))
+import AWS.Core (AccessKeyId(..), Arn(..), Credentials, ExternalId(..), Region, SecretAccessKey(..), SessionToken(..))
 import Control.Promise (Promise)
 import Control.Promise as Promise
-import Data.Function.Uncurried (Fn1, Fn2, runFn2)
+import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un, class Newtype)
 import Data.Nullable (Nullable, toMaybe)
@@ -12,7 +12,6 @@ import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
-import Effect.Class.Console (log)
 import Effect.Exception (throw)
 import Foreign (Foreign)
 import Justifill (justifill)
