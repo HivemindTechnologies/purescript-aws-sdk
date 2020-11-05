@@ -34,6 +34,7 @@ type PropsR
   = ( accessKey :: Maybe AccessKeyId
     , secretKey :: Maybe SecretAccessKey
     , region :: Maybe Region
+    , sessionToken :: Maybe SessionToken
     , stsRegionalEndpoint :: Maybe StsRegionalEndpoint
     )
 
@@ -115,4 +116,3 @@ assumeRole sts roleArn externalId roleSessionName = toExternal =<< Promise.toAff
     }
 
   curried = runFn2 assumeRoleImpl sts params
-
