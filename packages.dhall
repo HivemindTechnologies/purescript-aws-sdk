@@ -114,6 +114,7 @@ let additions =
           "v7.0.0"
       }
   }
+
 -------------------------------
 -}
 
@@ -123,6 +124,17 @@ let upstream =
 
 let overrides = {=}
 
-let additions = {=}
+let additions =
+    { justifill =
+        { dependencies =
+            [ "record", "spec", "typelevel-prelude"
+            ]
+        , repo =
+            "https://github.com/i-am-the-slime/purescript-justifill.git"
+        , version =
+            "e443bde"
+        }
+    }
 
 in  upstream // overrides // additions
+

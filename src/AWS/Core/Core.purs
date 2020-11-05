@@ -7,27 +7,32 @@ import Data.Either (Either, either)
 import Data.Formatter.DateTime (formatDateTime)
 import Data.Newtype (class Newtype)
 import Effect.Exception (Error, error)
+import Simple.JSON (class WriteForeign)
 
 --
 newtype AccessKeyId
   = AccessKeyId String
 
 derive instance ntAccessKeyId :: Newtype AccessKeyId _
+derive newtype instance wfAccessKeyId :: WriteForeign AccessKeyId
 
 newtype Region
   = Region String
 
 derive instance ntRegion :: Newtype Region _
+derive newtype instance wfRegion :: WriteForeign Region
 
 newtype SecretAccessKey
   = SecretAccessKey String
 
 derive instance ntSecretAccessKey :: Newtype SecretAccessKey _
+derive newtype instance wfSecretAccessKey :: WriteForeign SecretAccessKey
 
 newtype SessionToken
   = SessionToken String
 
 derive instance ntSessionToken :: Newtype SessionToken _
+derive newtype instance wfSessionToken :: WriteForeign SessionToken
 
 type Credentials
   = { accessKeyId :: AccessKeyId

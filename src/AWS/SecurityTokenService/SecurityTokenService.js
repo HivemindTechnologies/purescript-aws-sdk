@@ -2,8 +2,6 @@
 
 const STS = require('aws-sdk/clients/sts')
 
-exports.makeDefaultClientImpl = () => new STS()
-
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/STS.html
 exports.makeClientImpl = (params) =>
   () => new STS(params)
