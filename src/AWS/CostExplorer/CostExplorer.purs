@@ -69,39 +69,62 @@ type InternalGetCostAndUsageParams
     , "NextPageToken" :: Nullable (String)
     }
 
-getCostAndUsage :: forall a. CE -> { start :: DateTime, end :: DateTime | a } -> Aff InternalGetCostAndUsageResponse
+getCostAndUsage ::
+  forall a.
+  CE ->
+  { start :: DateTime, end :: DateTime | a } ->
+  Aff InternalGetCostAndUsageResponse
 getCostAndUsage ce range = do
   start <- AWSCore.raiseEither $ AWSCore.formatted range.start
   end <- AWSCore.raiseEither $ AWSCore.formatted range.end
   _getCostAndUsage ce start end Nothing
 
-_getCostAndUsage :: CE -> String -> String -> Maybe InternalGetCostAndUsageResponse -> Aff InternalGetCostAndUsageResponse
+_getCostAndUsage ::
+  CE ->
+  String ->
+  String ->
+  Maybe InternalGetCostAndUsageResponse ->
+  Aff InternalGetCostAndUsageResponse
 _getCostAndUsage ce start end previousResult = do
-  result <- Promise.toAffE
-    $ runFn2 getCostAndUsageImpl ce
-        { "TimePeriod":
-            { "Start": start
-            , "End": end
-            }
-        , "Granularity": "DAILY"
-        , "GroupBy":
-            [ { "Key": "SERVICE"
-              , "Type": "DIMENSION"
+  result <-
+    Promise.toAffE
+      $ runFn2 getCostAndUsageImpl ce
+          { "TimePeriod":
+              { "Start": start
+              , "End": end
               }
-            , { "Key": "USAGE_TYPE"
-              , "Type": "DIMENSION"
-              }
-            ]
-        , "Metrics": [ "UnblendedCost" ]
-        , "NextPageToken": (maybe null (\r -> r."NextPageToken") previousResult)
-        }
-
-  let mergedResult = {
-      "ResultsByTime": notNull $ (maybe mempty (\r -> fromMaybe mempty (toMaybe r."ResultsByTime")) previousResult) <> (fromMaybe mempty (toMaybe result."ResultsByTime")),
-      "GroupDefinitions": notNull $ (maybe mempty (\r -> fromMaybe mempty (toMaybe r."GroupDefinitions")) previousResult) <> (fromMaybe mempty (toMaybe result."GroupDefinitions")),
-      "NextPageToken": result."NextPageToken"
-  }
-
+          , "Granularity": "DAILY"
+          , "GroupBy":
+              [ { "Key": "SERVICE"
+                , "Type": "DIMENSION"
+                }
+              , { "Key": "USAGE_TYPE"
+                , "Type": "DIMENSION"
+                }
+              ]
+          , "Metrics": [ "UnblendedCost" ]
+          , "NextPageToken": (maybe null (\r -> r."NextPageToken") previousResult)
+          }
+  let
+    mergedResult =
+      { "ResultsByTime":
+          notNull
+            $ ( maybe
+                  mempty
+                  (\pr -> fromMaybe mempty (toMaybe pr."ResultsByTime"))
+                  previousResult
+              )
+            <> (fromMaybe mempty (toMaybe result."ResultsByTime"))
+      , "GroupDefinitions":
+          notNull
+            $ ( maybe
+                  mempty
+                  (\pr -> fromMaybe mempty (toMaybe pr."GroupDefinitions"))
+                  previousResult
+              )
+            <> (fromMaybe mempty (toMaybe result."GroupDefinitions"))
+      , "NextPageToken": result."NextPageToken"
+      }
   case (toMaybe result."NextPageToken") of
-       Just _ -> _getCostAndUsage ce start end (Just mergedResult)
-       Nothing -> pure mergedResult
+    Just _ -> _getCostAndUsage ce start end (Just mergedResult)
+    Nothing -> pure mergedResult
