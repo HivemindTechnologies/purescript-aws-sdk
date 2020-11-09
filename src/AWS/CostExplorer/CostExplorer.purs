@@ -103,7 +103,8 @@ _getCostAndUsage ce start end previousResult = do
                 }
               ]
           , "Metrics": [ "UnblendedCost" ]
-          , "NextPageToken": (maybe null (\r -> r."NextPageToken") previousResult)
+          -- , "NextPageToken": (maybe null (\r -> r."NextPageToken") previousResult)
+          , "NextPageToken": (toNullable $ previousResult >>= \pr -> toMaybe pr."NextPageToken")
           }
   let
     mergedResult =
