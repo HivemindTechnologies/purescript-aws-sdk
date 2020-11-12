@@ -4,9 +4,10 @@ import Prelude
 
 import AWS.Core (Arn(..), Region(..), AccessKeyId(..), SecretAccessKey(..))
 import Control.Promise (Promise, toAffE)
+import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Newtype (un)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Data.Newtype (un)
 import Simple.JSON (class WriteForeign, writeJSON)
 
 type InternalLambdaParams = {
@@ -37,10 +38,10 @@ makeClient r a s =
 makeDefaultClient :: Effect Lambda
 makeDefaultClient = makeDefaultClientImpl
 
-foreign import invokeFunctionImpl :: forall output. InternalLambdaParams -> Effect (Promise output)
+foreign import invokeFunctionImpl :: forall output. Fn2 Lambda InternalLambdaParams (Effect (Promise output))
 
-invokeFunction :: forall input output. WriteForeign input => Arn -> input -> Aff output
-invokeFunction (Arn arn) input = invokeFunctionImpl params # toAffE
+invokeFunction :: forall input output. WriteForeign input => Lambda -> Arn -> input -> Aff output
+invokeFunction client (Arn arn) input = runFn2 invokeFunctionImpl client params # toAffE
     where
       params = {
           "FunctionName" : arn,
