@@ -9,4 +9,4 @@ exports.makeClientImpl = (params) =>
 
 
 exports.invokeFunctionImpl = (lambda, params) =>
-  () => lambda.invokeFunction(params).promise()
+  () => lambda.invoke(params).promise()
