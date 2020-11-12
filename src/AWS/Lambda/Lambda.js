@@ -7,6 +7,5 @@ exports.makeDefaultClientImpl = () => new AWS.Lambda()
 exports.makeClientImpl = (params) =>
   () => new AWS.Lambda(params)
 
-
 exports.invokeFunctionImpl = (lambda, params) =>
   () => lambda.invoke(params).promise()
