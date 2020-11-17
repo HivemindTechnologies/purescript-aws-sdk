@@ -24,7 +24,10 @@ import Simple.JSON (class WriteForeign, write, writeImpl)
 
 foreign import data STS :: Type
 
-data StsRegionalEndpoint = Regional | Legacy
+data StsRegionalEndpoint
+  = Regional
+  | Legacy
+
 instance writeForeignStsRegionalEndpoint :: WriteForeign StsRegionalEndpoint where
   writeImpl Regional = writeImpl "regional"
   writeImpl Legacy = writeImpl "legacy"
@@ -37,7 +40,8 @@ type PropsR
     , stsRegionalEndpoint :: Maybe StsRegionalEndpoint
     )
 
-type Props = Record PropsR
+type Props
+  = Record PropsR
 
 foreign import makeClientImpl :: Foreign -> Effect STS
 
