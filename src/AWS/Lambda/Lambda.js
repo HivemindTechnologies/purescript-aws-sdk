@@ -2,10 +2,8 @@
 
 var AWS = require('aws-sdk')
 
-exports.makeDefaultClientImpl = () => new AWS.Lambda()
-
-exports.makeClientImpl = (params) =>
+exports.newLambda = (params) =>
   () => new AWS.Lambda(params)
 
-exports.invokeFunctionImpl = (lambda, params) =>
+exports.invokeImpl = (lambda, params) =>
   () => lambda.invoke(params).promise()
