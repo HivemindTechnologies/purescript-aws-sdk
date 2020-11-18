@@ -2,7 +2,8 @@
 
 const CloudWatch = require('aws-sdk/clients/cloudwatch')
 
-exports.makeClientImpl = (params) =>
+
+exports.newCloudWatch = (params) =>
   () => new CloudWatch(params)
 
 exports.getMetricStatisticsImpl = (cw, p) =>
