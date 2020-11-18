@@ -1,15 +1,10 @@
-module AWS.Core where
+module AWS.Core.Types where
 
 import Prelude
-import Control.Monad.Error.Class (class MonadThrow, throwError)
-import Data.DateTime (DateTime)
-import Data.Either (Either, either)
-import Data.Formatter.DateTime (formatDateTime)
 import Data.Newtype (class Newtype)
-import Effect.Exception (Error, error)
 import Simple.JSON (class WriteForeign)
+import Data.Maybe (Maybe)
 
---
 newtype AccessKeyId
   = AccessKeyId String
 
@@ -33,12 +28,6 @@ newtype SessionToken
 
 derive instance ntSessionToken :: Newtype SessionToken _
 derive newtype instance wfSessionToken :: WriteForeign SessionToken
-
-type Credentials
-  = { accessKeyId :: AccessKeyId
-    , secretAccessKey :: SecretAccessKey
-    , sessionToken :: SessionToken
-    }
 
 newtype Arn
   = Arn String
@@ -67,8 +56,10 @@ derive instance ntInstanceType :: Newtype InstanceType _
 
 derive newtype instance showInstanceType :: Show InstanceType
 
-formatted :: DateTime -> Either String String
-formatted d = formatDateTime "YYYY-MM-DD" d
-
-raiseEither :: forall m r. MonadThrow Error m => Either String r -> m r
-raiseEither = either (error >>> throwError) pure
+type PropsDefaultR r 
+  = ( accessKeyId :: Maybe AccessKeyId
+    , secretAccessKey :: Maybe SecretAccessKey
+    , region :: Maybe Region
+    , sessionToken :: Maybe SessionToken
+    | r 
+    )

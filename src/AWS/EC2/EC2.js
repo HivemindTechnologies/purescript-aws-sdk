@@ -2,7 +2,7 @@
 
 const EC2 = require('aws-sdk/clients/ec2')
 
-exports.makeClientImpl = (params) =>
+exports.newEC2 = (params) =>
   () => new EC2(params)
 
 exports.describeInstancesImpl = (ec2) =>

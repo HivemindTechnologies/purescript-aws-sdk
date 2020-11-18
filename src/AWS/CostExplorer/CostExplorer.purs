@@ -1,37 +1,35 @@
 module AWS.CostExplorer where
 
 import Prelude
-import AWS.Core (AccessKeyId(..), Region(..), SecretAccessKey(..), SessionToken(..))
-import AWS.Core as AWSCore
+
+import AWS.Core.Client (makeClientHelper, makeDefaultClient)
+import AWS.Core.Types (PropsDefaultR)
+import AWS.Core.Util (raiseEither, toIso8601Date)
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.DateTime (DateTime)
-import Data.Function.Uncurried (Fn1, Fn2, runFn2)
-import Data.Maybe (Maybe)
-import Data.Newtype (un)
-import Data.Nullable (Nullable, toNullable)
+import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Nullable (Nullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Foreign (Foreign)
+import Justifill.Fillable (class FillableFields)
+import Justifill.Justifiable (class JustifiableFields)
+import Prim.Row (class Union)
+import Prim.RowList (class RowToList)
 
 foreign import data CE :: Type
 
-type InternalMakeClientParams
-  = { region :: String
-    , secretAccessKey :: String
-    , accessKeyId :: String
-    , sessionToken :: Nullable String
-    }
+foreign import newCE :: Foreign -> (Effect CE)
 
-foreign import makeClientImpl :: Fn1 InternalMakeClientParams (Effect CE)
+type PropsR = PropsDefaultR ()
+type Props = Record PropsR
 
-makeClient :: Region -> AccessKeyId -> SecretAccessKey -> Maybe SessionToken -> Effect CE
-makeClient r a s t = do
-  makeClientImpl
-    { region: (un Region r)
-    , secretAccessKey: (un SecretAccessKey s)
-    , accessKeyId: (un AccessKeyId a)
-    , sessionToken: toNullable $ map (un SessionToken) t
-    }
+makeClient :: forall t4 t5 t6 t7 t8.
+  RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
+                                                  PropsR
+                                                 => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CE
+makeClient r = ((makeDefaultClient r:: Props)) # makeClientHelper newCE
 
 -- https://github.com/aws/aws-sdk-js/blob/dabf8b11e6e0d61d4dc2ab62717b8735fb8b29e4/clients/costexplorer.d.ts#L649
 type InternalGetCostAndUsageResponse
@@ -69,8 +67,8 @@ type InternalGetCostAndUsageParams
 
 getCostAndUsage :: forall a. CE -> { start :: DateTime, end :: DateTime | a } -> Aff InternalGetCostAndUsageResponse
 getCostAndUsage ce range = do
-  start <- AWSCore.raiseEither $ AWSCore.formatted range.start
-  end <- AWSCore.raiseEither $ AWSCore.formatted range.end
+  start <- raiseEither $ toIso8601Date range.start
+  end <- raiseEither $ toIso8601Date range.end
   Promise.toAffE
     $ runFn2 getCostAndUsageImpl ce
         { "TimePeriod":

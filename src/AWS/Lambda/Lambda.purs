@@ -2,12 +2,17 @@ module AWS.Lambda where
 
 import Prelude
 
-import AWS.Core (Arn(..), Region(..), AccessKeyId(..), SecretAccessKey(..))
+import AWS.Core.Client (makeClientHelper, makeDefaultClient)
+import AWS.Core.Types (Arn(..),PropsDefaultR)
 import Control.Promise (Promise, toAffE)
 import Data.Function.Uncurried (Fn2, runFn2)
-import Data.Newtype (un)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Foreign (Foreign)
+import Justifill.Fillable (class FillableFields)
+import Justifill.Justifiable (class JustifiableFields)
+import Prim.Row (class Union)
+import Prim.RowList (class RowToList)
 import Simple.JSON (class WriteForeign, writeJSON)
 
 type InternalLambdaParams = {
@@ -17,31 +22,21 @@ type InternalLambdaParams = {
 
 foreign import data Lambda :: Type
 
-type InternalMakeClientParams
-  = { region :: String
-    , secretAccessKey :: String
-    , accessKeyId :: String
-    }
+foreign import newLambda :: Foreign -> (Effect Lambda)
 
-foreign import makeClientImpl :: InternalMakeClientParams -> (Effect Lambda)
+type PropsR = PropsDefaultR ()
+type Props = Record PropsR
 
-foreign import makeDefaultClientImpl :: Effect Lambda
+makeClient :: forall t4 t5 t6 t7 t8.
+  RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
+                                                  PropsR
+                                                 => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect Lambda
+makeClient r = ((makeDefaultClient r:: Props)) # makeClientHelper newLambda
 
-makeClient :: Region -> AccessKeyId -> SecretAccessKey -> Effect Lambda
-makeClient r a s =
-  makeClientImpl
-    { region: un Region r
-    , secretAccessKey: un SecretAccessKey s
-    , accessKeyId: un AccessKeyId a
-    }
+foreign import invokeImpl :: forall output. Fn2 Lambda InternalLambdaParams (Effect (Promise output))
 
-makeDefaultClient :: Effect Lambda
-makeDefaultClient = makeDefaultClientImpl
-
-foreign import invokeFunctionImpl :: forall output. Fn2 Lambda InternalLambdaParams (Effect (Promise output))
-
-invokeFunction :: forall input output. WriteForeign input => Lambda -> Arn -> input -> Aff output
-invokeFunction client (Arn arn) input = runFn2 invokeFunctionImpl client params # toAffE
+invoke :: forall input output. WriteForeign input => Lambda -> Arn -> input -> Aff output
+invoke client (Arn arn) input = runFn2 invokeImpl client params # toAffE
     where
       params = {
           "FunctionName" : arn,

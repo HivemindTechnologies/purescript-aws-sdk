@@ -2,7 +2,7 @@
 
 const CostExplorer = require('aws-sdk/clients/costexplorer')
 
-exports.makeClientImpl = (params) =>
+exports.newCE = (params) =>
   () => new CostExplorer(params)
 
 

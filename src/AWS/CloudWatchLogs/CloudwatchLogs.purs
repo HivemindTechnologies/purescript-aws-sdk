@@ -1,46 +1,40 @@
 module CloudWatchLogs where
 
 import Prelude
-import AWS.Core (AccessKeyId(..), Region(..), SecretAccessKey(..), SessionToken(..))
+
+import AWS.Core.Client (makeClientHelper, makeDefaultClient)
+import AWS.Core.Types (PropsDefaultR)
 import Control.Promise (Promise)
 import Control.Promise as Promise
-import Data.Function.Uncurried (Fn1, runFn1, Fn2, runFn2)
+import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Maybe (Maybe)
-import Data.Newtype (un)
-import Data.Nullable (Nullable, toNullable)
+import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
+import Foreign (Foreign)
+import Justifill.Fillable (class FillableFields)
+import Justifill.Justifiable (class JustifiableFields)
+import Prim.Row (class Union)
+import Prim.RowList (class RowToList)
 
-foreign import data API :: Type
+foreign import data CloudWatchLogs :: Type
+
+foreign import newCloudWatchLogs :: Foreign -> (Effect CloudWatchLogs)
+
+type PropsR = PropsDefaultR ()
+type Props = Record PropsR
+
+makeClient :: forall t4 t5 t6 t7 t8.
+  RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
+                                                  PropsR
+                                                 => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CloudWatchLogs
+makeClient r = ((makeDefaultClient r:: Props)) # makeClientHelper newCloudWatchLogs
 
 newtype LogGroupName
   = LogGroupName String
-
-type InternalMakeClientParams
-  = { region :: String
-    , secretAccessKey :: String
-    , accessKeyId :: String
-    , sessionToken :: Nullable String
-    }
-
-foreign import makeDefaultClientImpl :: Effect API
-
-makeDefaultClient :: Effect API
-makeDefaultClient = makeDefaultClientImpl
-
-foreign import makeClientImpl :: Fn1 InternalMakeClientParams (Effect API)
-
-makeClient :: Region -> AccessKeyId -> SecretAccessKey -> Maybe SessionToken -> Effect API
-makeClient r a s t =
-  makeClientImpl
-    { region: (un Region r)
-    , secretAccessKey: (un SecretAccessKey s)
-    , accessKeyId: (un AccessKeyId a)
-    , sessionToken: toNullable $ map (un SessionToken) t
-    }
-
+  
 type InternalDescribeLogGroupsResponse
   = { logGroups :: Array InternalLogGroup }
 
@@ -86,10 +80,10 @@ type LogStream
 type DescribeLogStreamsResponse
   = { logStreams :: Array LogStream }
 
-foreign import describeLogGroupsImpl :: Fn1 API (Effect (Promise InternalDescribeLogGroupsResponse))
+foreign import describeLogGroupsImpl :: CloudWatchLogs -> (Effect (Promise InternalDescribeLogGroupsResponse))
 
-describeLogGroups :: API -> Aff DescribeLogGroupsResponse
-describeLogGroups api = liftEffect curried >>= Promise.toAff <#> toExternal
+describeLogGroups :: CloudWatchLogs -> Aff DescribeLogGroupsResponse
+describeLogGroups cloudWatchLogs = liftEffect curried >>= Promise.toAff <#> toExternal
   where
   toExternal :: InternalDescribeLogGroupsResponse -> DescribeLogGroupsResponse
   toExternal { logGroups: internal } = { logGroups: internal <#> toExternalLogGroup }
@@ -103,12 +97,12 @@ describeLogGroups api = liftEffect curried >>= Promise.toAff <#> toExternal
     }
 
   curried :: Effect (Promise InternalDescribeLogGroupsResponse)
-  curried = runFn1 describeLogGroupsImpl api
+  curried = describeLogGroupsImpl cloudWatchLogs
 
-foreign import describeLogStreamsImpl :: Fn2 API String (Effect (Promise InternalDescribeLogStreamsResponse))
+foreign import describeLogStreamsImpl :: Fn2 CloudWatchLogs String (Effect (Promise InternalDescribeLogStreamsResponse))
 
-describeLogStreams :: API -> LogGroupName -> Aff (DescribeLogStreamsResponse)
-describeLogStreams api (LogGroupName name) = liftEffect (curried api name) >>= Promise.toAff <#> toExternal
+describeLogStreams :: CloudWatchLogs -> LogGroupName -> Aff (DescribeLogStreamsResponse)
+describeLogStreams cloudWatchLogs (LogGroupName name) = liftEffect (curried cloudWatchLogs name) >>= Promise.toAff <#> toExternal
   where
   toExternal :: InternalDescribeLogStreamsResponse -> DescribeLogStreamsResponse
   toExternal { logStreams: internal } = { logStreams: internal <#> toExternalLogStream }
@@ -121,5 +115,5 @@ describeLogStreams api (LogGroupName name) = liftEffect (curried api name) >>= P
     , lastIngestionTime: Nullable.toMaybe internal.lastIngestionTime
     }
 
-  curried :: API -> String -> Effect (Promise InternalDescribeLogStreamsResponse)
+  curried :: CloudWatchLogs -> String -> Effect (Promise InternalDescribeLogStreamsResponse)
   curried = (runFn2 describeLogStreamsImpl)

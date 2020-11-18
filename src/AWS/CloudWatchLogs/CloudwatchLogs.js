@@ -2,9 +2,7 @@
 
 const { CloudWatchLogs } = require('aws-sdk')
 
-exports.makeDefaultClientImpl = () => new CloudWatchLogs()
-
-exports.makeClientImpl = (params) =>
+exports.newCloudWatchLogs = (params) =>
   () => new CloudWatchLogs(params)
 
 exports.describeLogGroupsImpl = (cw) =>
