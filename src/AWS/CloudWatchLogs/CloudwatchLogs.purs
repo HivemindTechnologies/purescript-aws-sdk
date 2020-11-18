@@ -1,4 +1,4 @@
-module CloudWatchLogs where
+module AWS.CloudWatchLogs where
 
 import Prelude
 

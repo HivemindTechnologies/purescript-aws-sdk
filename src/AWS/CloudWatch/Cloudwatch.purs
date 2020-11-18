@@ -2,7 +2,6 @@ module AWS.CloudWatch where
 
 import Prelude
 
-
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
 import AWS.Core.Types (DefaultClientProps, DefaultClientPropsR, InstanceId)
 import Control.Promise (Promise)
