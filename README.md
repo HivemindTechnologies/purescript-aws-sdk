@@ -17,14 +17,14 @@ Currently we have some functionality for the following modules:
 While we do not have any plans to support other features that we currently don't use, we do welcome contributions of missing features. 
 
 
-## Usage
+## Installation
 
 Add `purescript-aws-sdk` and `justifill` to your `packages.dhall` and `spago.dhall`. For more information on how to add a dependency to your spago project, see the [spago documentation](https://github.com/purescript/spago#add-a-package-to-the-package-set).
 
 ❗Don't forget to update the **version** ot the repo according to the available [tags](https://github.com/HivemindTechnologies/purescript-aws-sdk/tags).
 
 
-### Example
+## Usage
 
 ```purescript
 import Prelude
@@ -44,4 +44,17 @@ callLambda = do
     arn = Arn "arn:aws:lambda:<<REGION>>:<<ACCOUNT>>:function:<<LAMBDA-NAME>>" -- set the arn of your lambda
   result <- AWSLambda.invoke client arn mydata  -- invoke the lambda
   pure result
+```
+
+The other modules work in a similar way. You create the client first, and then call a function passing the client as well as other parameters.
+
+You can customise the client, by passing the options:
+
+```purescript
+EC2.makeClient
+  { region: Region "eu-west-1"
+  , accessKeyId : AccessKeyId "my-access-key-id"
+  , secretAccessKey : AccessKeyId "my-secret-access-key"
+  , sessionToken : SessionToken "my-session-token"
+  }
 ```
