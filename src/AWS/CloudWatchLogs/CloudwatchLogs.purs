@@ -2,6 +2,7 @@ module CloudWatchLogs where
 
 import Prelude
 
+
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
 import AWS.Core.Types (DefaultClientPropsR, DefaultClientProps)
 import Control.Promise (Promise)

@@ -2,6 +2,7 @@
 
 const CloudWatch = require('aws-sdk/clients/cloudwatch')
 
+
 exports.newCloudWatch = (params) =>
   () => new CloudWatch(params)
 

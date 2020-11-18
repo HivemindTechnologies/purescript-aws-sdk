@@ -2,6 +2,7 @@
 
 const { CloudWatchLogs } = require('aws-sdk')
 
+
 exports.newCloudWatchLogs = (params) =>
   () => new CloudWatchLogs(params)
 
