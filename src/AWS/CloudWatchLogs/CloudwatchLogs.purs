@@ -1,8 +1,6 @@
 module AWS.CloudWatchLogs where
 
 import Prelude
-
-
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
 import AWS.Core.Types (DefaultClientPropsR, DefaultClientProps)
 import Control.Promise (Promise)
@@ -24,15 +22,20 @@ foreign import data CloudWatchLogs :: Type
 
 foreign import newCloudWatchLogs :: Foreign -> (Effect CloudWatchLogs)
 
-makeClient :: forall t4 t5 t6 t7 t8.
-  RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
-                                                  DefaultClientPropsR
-                                                 => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CloudWatchLogs
-makeClient r = ((makeDefaultClient r:: DefaultClientProps)) # makeClientHelper newCloudWatchLogs
+makeClient ::
+  forall t4 t5 t6 t7 t8.
+  RowToList t6 t5 =>
+  FillableFields t5 () t6 =>
+  Union
+    t8
+    t6
+    DefaultClientPropsR =>
+  RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CloudWatchLogs
+makeClient r = ((makeDefaultClient r :: DefaultClientProps)) # makeClientHelper newCloudWatchLogs
 
 newtype LogGroupName
   = LogGroupName String
-  
+
 type InternalDescribeLogGroupsResponse
   = { logGroups :: Array InternalLogGroup }
 

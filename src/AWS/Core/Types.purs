@@ -1,6 +1,6 @@
 module AWS.Core.Types where
 
-import Prelude
+import Prelude (class Show)
 import Data.Newtype (class Newtype)
 import Simple.JSON (class WriteForeign)
 import Data.Maybe (Maybe)
@@ -60,13 +60,16 @@ derive instance ntInstanceType :: Newtype InstanceType _
 
 derive newtype instance showInstanceType :: Show InstanceType
 
-type BasicClientPropsR r 
+type BasicClientPropsR r
   = ( accessKeyId :: Maybe AccessKeyId
     , secretAccessKey :: Maybe SecretAccessKey
     , region :: Maybe Region
     , sessionToken :: Maybe SessionToken
-    | r 
+    | r
     )
 
-type DefaultClientPropsR = BasicClientPropsR ()
-type DefaultClientProps = Record DefaultClientPropsR
+type DefaultClientPropsR
+  = BasicClientPropsR ()
+
+type DefaultClientProps
+  = Record DefaultClientPropsR

@@ -1,7 +1,6 @@
 module AWS.CloudWatch where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
 import AWS.Core.Types (DefaultClientProps, DefaultClientPropsR, InstanceId)
 import Control.Promise (Promise)
@@ -28,11 +27,16 @@ foreign import data CloudWatch :: Type
 
 foreign import newCloudWatch :: Foreign -> (Effect CloudWatch)
 
-makeClient :: forall t4 t5 t6 t7 t8.
-  RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
-                                                  DefaultClientPropsR
-                                                 => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CloudWatch
-makeClient r = ((makeDefaultClient r:: DefaultClientProps)) # makeClientHelper newCloudWatch
+makeClient ::
+  forall t4 t5 t6 t7 t8.
+  RowToList t6 t5 =>
+  FillableFields t5 () t6 =>
+  Union
+    t8
+    t6
+    DefaultClientPropsR =>
+  RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CloudWatch
+makeClient r = ((makeDefaultClient r :: DefaultClientProps)) # makeClientHelper newCloudWatch
 
 type InternalGetMetricsStatisticsParams
   = { "Dimensions" :: Array { "Name" :: String, "Value" :: String }

@@ -1,7 +1,6 @@
-module AWS.Core.Client (makeDefaultClient, makeClientHelper) where 
+module AWS.Core.Client (makeDefaultClient, makeClientHelper) where
 
 import AWS.Core.Types
-
 import Effect (Effect)
 import Foreign (Foreign)
 import Justifill (justifill)
@@ -12,13 +11,15 @@ import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
 import Simple.JSON (class WriteForeign, write)
 
-makeClientHelper :: forall additionalProps client. WriteForeign (Record (BasicClientPropsR additionalProps)) => 
+makeClientHelper ::
+  forall additionalProps client.
+  WriteForeign (Record (BasicClientPropsR additionalProps)) =>
   (Foreign -> Effect client) -> Record (BasicClientPropsR additionalProps) -> Effect client
 makeClientHelper newClient = write >>> newClient
 
 makeDefaultClient ::
   forall additionalProps output input to toRL inputRL.
-  Nub (BasicClientPropsR additionalProps) (BasicClientPropsR additionalProps) => 
+  Nub (BasicClientPropsR additionalProps) (BasicClientPropsR additionalProps) =>
   RowToList to toRL =>
   FillableFields toRL () to =>
   Union
