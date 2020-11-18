@@ -1,4 +1,4 @@
-module AWS.SecurityTokenService (STS, StsRegionalEndpoint,RoleSessionName, STSProps, STSPropsR, makeClient, makeRegionalClient, assumeRole) where
+module AWS.SecurityTokenService (STS, StsRegionalEndpoint(..),RoleSessionName(..), STSProps, STSPropsR, makeClient, makeRegionalClient, assumeRole) where
 
 import Prelude
 
