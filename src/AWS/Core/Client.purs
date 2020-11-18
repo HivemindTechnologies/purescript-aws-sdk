@@ -12,21 +12,21 @@ import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
 import Simple.JSON (class WriteForeign, write)
 
-makeClientHelper :: forall additionalProps client. WriteForeign (Record (PropsDefaultR additionalProps)) => 
-  (Foreign -> Effect client) -> Record (PropsDefaultR additionalProps) -> Effect client
+makeClientHelper :: forall additionalProps client. WriteForeign (Record (BasicClientPropsR additionalProps)) => 
+  (Foreign -> Effect client) -> Record (BasicClientPropsR additionalProps) -> Effect client
 makeClientHelper newClient = write >>> newClient
 
 makeDefaultClient ::
   forall additionalProps output input to toRL inputRL.
-  Nub (PropsDefaultR additionalProps) (PropsDefaultR additionalProps) => 
+  Nub (BasicClientPropsR additionalProps) (BasicClientPropsR additionalProps) => 
   RowToList to toRL =>
   FillableFields toRL () to =>
   Union
     output
     to
-    (PropsDefaultR additionalProps) =>
+    (BasicClientPropsR additionalProps) =>
   RowToList input inputRL =>
   JustifiableFields inputRL input () output =>
   Record input ->
-  Record (PropsDefaultR additionalProps)
-makeDefaultClient r = ((justifill r) :: Record (PropsDefaultR additionalProps))
+  Record (BasicClientPropsR additionalProps)
+makeDefaultClient r = ((justifill r) :: Record (BasicClientPropsR additionalProps))

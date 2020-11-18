@@ -56,10 +56,13 @@ derive instance ntInstanceType :: Newtype InstanceType _
 
 derive newtype instance showInstanceType :: Show InstanceType
 
-type PropsDefaultR r 
+type BasicClientPropsR r 
   = ( accessKeyId :: Maybe AccessKeyId
     , secretAccessKey :: Maybe SecretAccessKey
     , region :: Maybe Region
     , sessionToken :: Maybe SessionToken
     | r 
     )
+
+type DefaultClientPropsR = BasicClientPropsR ()
+type DefaultClientProps = Record DefaultClientPropsR

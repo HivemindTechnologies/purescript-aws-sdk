@@ -3,7 +3,7 @@ module AWS.CostExplorer where
 import Prelude
 
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
-import AWS.Core.Types (PropsDefaultR)
+import AWS.Core.Types (DefaultClientPropsR, DefaultClientProps)
 import AWS.Core.Util (raiseEither, toIso8601Date)
 import Control.Promise (Promise)
 import Control.Promise as Promise
@@ -22,14 +22,12 @@ foreign import data CE :: Type
 
 foreign import newCE :: Foreign -> (Effect CE)
 
-type PropsR = PropsDefaultR ()
-type Props = Record PropsR
 
 makeClient :: forall t4 t5 t6 t7 t8.
   RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
-                                                  PropsR
+                                                  DefaultClientPropsR
                                                  => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CE
-makeClient r = ((makeDefaultClient r:: Props)) # makeClientHelper newCE
+makeClient r = ((makeDefaultClient r:: DefaultClientProps)) # makeClientHelper newCE
 
 -- https://github.com/aws/aws-sdk-js/blob/dabf8b11e6e0d61d4dc2ab62717b8735fb8b29e4/clients/costexplorer.d.ts#L649
 type InternalGetCostAndUsageResponse

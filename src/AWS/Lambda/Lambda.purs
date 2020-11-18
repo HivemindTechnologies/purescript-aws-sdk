@@ -3,7 +3,7 @@ module AWS.Lambda where
 import Prelude
 
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
-import AWS.Core.Types (Arn(..),PropsDefaultR)
+import AWS.Core.Types (Arn(..), DefaultClientPropsR, DefaultClientProps)
 import Control.Promise (Promise, toAffE)
 import Data.Function.Uncurried (Fn2, runFn2)
 import Effect (Effect)
@@ -24,14 +24,11 @@ foreign import data Lambda :: Type
 
 foreign import newLambda :: Foreign -> (Effect Lambda)
 
-type PropsR = PropsDefaultR ()
-type Props = Record PropsR
-
 makeClient :: forall t4 t5 t6 t7 t8.
   RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
-                                                  PropsR
+                                                  DefaultClientPropsR
                                                  => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect Lambda
-makeClient r = ((makeDefaultClient r:: Props)) # makeClientHelper newLambda
+makeClient r = ((makeDefaultClient r:: DefaultClientProps)) # makeClientHelper newLambda
 
 foreign import invokeImpl :: forall output. Fn2 Lambda InternalLambdaParams (Effect (Promise output))
 
