@@ -48,7 +48,7 @@ callLambda = do
 
 The other modules work in a similar way. You create the client first, and then call a function passing the client as well as other parameters.
 
-You can customise the client, by passing the options:
+You can customise the client by passing in any additonal options, e.g.:
 
 ```purescript
 EC2.makeClient
