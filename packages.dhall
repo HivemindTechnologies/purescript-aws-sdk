@@ -132,7 +132,7 @@ let additions =
         , repo =
             "https://github.com/i-am-the-slime/purescript-justifill.git"
         , version =
-            "e443bde"
+            "4f84ba6" 
         }
     }
 

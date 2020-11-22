@@ -1,8 +1,8 @@
 module AWS.CostExplorer where
 
 import Prelude
-import AWS.Core.Client (makeClientHelper, makeDefaultClient)
-import AWS.Core.Types (DefaultClientPropsR, DefaultClientProps)
+import AWS.Core.Client (makeClientHelper)
+import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (raiseEither, toIso8601Date)
 import Control.Promise (Promise)
 import Control.Promise as Promise
@@ -13,29 +13,25 @@ import Data.Nullable (Nullable, notNull, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Foreign (Foreign)
-import Justifill (justifill)
-import Justifill.Fillable (class Fillable, class FillableFields, fill)
-import Justifill.Justifiable (class Justifiable, class JustifiableFields, justify)
-import Prim.Row (class Union)
-import Prim.RowList (class RowToList)
+import Justifill (justifillVia)
+import Justifill.Fillable (class Fillable)
+import Justifill.Justifiable (class Justifiable)
+import Type.Proxy (Proxy(..))
 
 foreign import data CE :: Type
 
 foreign import newCE :: Foreign -> (Effect CE)
 
 makeClient ::
-  forall given justified.
-  Justifiable { | given } justified =>
-  Fillable justified DefaultClientProps =>
-  { | given } ->
+  forall r via.
+  Justifiable { | r } { | via } =>
+  Fillable { | via } DefaultClientProps =>
+  { | r } ->
   Effect CE
-makeClient r = justifilled # makeClientHelper newCE
+makeClient r = (justifillVia viaProxy r :: DefaultClientProps) # makeClientHelper newCE
   where
-  justified :: justified
-  justified = justify r
-
-  justifilled :: DefaultClientProps
-  justifilled = fill justified
+  viaProxy :: Proxy { | via }
+  viaProxy = Proxy
 
 -- https://github.com/aws/aws-sdk-js/blob/dabf8b11e6e0d61d4dc2ab62717b8735fb8b29e4/clients/costexplorer.d.ts#L649
 type InternalGetCostAndUsageResponse
