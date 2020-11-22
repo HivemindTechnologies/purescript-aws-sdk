@@ -28,10 +28,13 @@ makeClient ::
   Fillable { | via } DefaultClientProps =>
   { | r } ->
   Effect CE
-makeClient r = (justifillVia viaProxy r :: DefaultClientProps) # makeClientHelper newCE
+makeClient r = makeClientHelper newCE props
   where
   viaProxy :: Proxy { | via }
   viaProxy = Proxy
+
+  props :: DefaultClientProps
+  props = justifillVia viaProxy r
 
 -- https://github.com/aws/aws-sdk-js/blob/dabf8b11e6e0d61d4dc2ab62717b8735fb8b29e4/clients/costexplorer.d.ts#L649
 type InternalGetCostAndUsageResponse
