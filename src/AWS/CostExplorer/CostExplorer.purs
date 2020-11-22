@@ -13,8 +13,9 @@ import Data.Nullable (Nullable, notNull, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Foreign (Foreign)
-import Justifill.Fillable (class FillableFields)
-import Justifill.Justifiable (class JustifiableFields)
+import Justifill (justifill)
+import Justifill.Fillable (class Fillable, class FillableFields, fill)
+import Justifill.Justifiable (class Justifiable, class JustifiableFields, justify)
 import Prim.Row (class Union)
 import Prim.RowList (class RowToList)
 
@@ -23,15 +24,18 @@ foreign import data CE :: Type
 foreign import newCE :: Foreign -> (Effect CE)
 
 makeClient ::
-  forall propsRowList rl r2 props clientProps.
-  RowToList r2 rl =>
-  FillableFields rl () r2 =>
-  Union clientProps r2 DefaultClientPropsR =>
-  RowToList props propsRowList =>
-  JustifiableFields propsRowList props () clientProps =>
-  Record props ->
+  forall given justified.
+  Justifiable { | given } justified =>
+  Fillable justified DefaultClientProps =>
+  { | given } ->
   Effect CE
-makeClient r = ((makeDefaultClient r :: DefaultClientProps)) # makeClientHelper newCE
+makeClient r = justifilled # makeClientHelper newCE
+  where
+  justified :: justified
+  justified = justify r
+
+  justifilled :: DefaultClientProps
+  justifilled = fill justified
 
 -- https://github.com/aws/aws-sdk-js/blob/dabf8b11e6e0d61d4dc2ab62717b8735fb8b29e4/clients/costexplorer.d.ts#L649
 type InternalGetCostAndUsageResponse
