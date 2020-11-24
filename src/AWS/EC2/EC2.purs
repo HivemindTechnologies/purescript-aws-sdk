@@ -1,7 +1,6 @@
 module AWS.EC2 where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
 import AWS.Core.Types (DefaultClientPropsR, Instance, InstanceId(..), InstanceType(..), DefaultClientProps)
 import Control.Promise (Promise)
@@ -20,11 +19,16 @@ foreign import data EC2 :: Type
 
 foreign import newEC2 :: Foreign -> (Effect EC2)
 
-makeClient :: forall t4 t5 t6 t7 t8.
-  RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
-                                                  DefaultClientPropsR
-                                                 => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect EC2
-makeClient r = ((makeDefaultClient r:: DefaultClientProps)) # makeClientHelper newEC2
+makeClient ::
+  forall t4 t5 t6 t7 t8.
+  RowToList t6 t5 =>
+  FillableFields t5 () t6 =>
+  Union
+    t8
+    t6
+    DefaultClientPropsR =>
+  RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect EC2
+makeClient r = ((makeDefaultClient r :: DefaultClientProps)) # makeClientHelper newEC2
 
 type InternalEC2Instance
   = { "InstanceId" :: String, "InstanceType" :: String }

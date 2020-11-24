@@ -1,7 +1,6 @@
-module AWS.SecurityTokenService (STS, StsRegionalEndpoint(..),RoleSessionName(..), STSProps, STSPropsR, makeClient, makeRegionalClient, assumeRole) where
+module AWS.SecurityTokenService (STS, StsRegionalEndpoint(..), RoleSessionName(..), STSProps, STSPropsR, makeClient, makeRegionalClient, assumeRole) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
 import AWS.Core.Types (AccessKeyId(..), Arn(..), BasicClientPropsR, ExternalId(..), SecretAccessKey(..), SessionToken(..), DefaultClientProps)
 import Control.Promise (Promise)
@@ -28,7 +27,9 @@ foreign import data STS :: Type
 
 foreign import newSTS :: Foreign -> Effect STS
 
-data StsRegionalEndpoint = Regional | Legacy
+data StsRegionalEndpoint
+  = Regional
+  | Legacy
 
 instance writeForeignStsRegionalEndpoint :: WriteForeign StsRegionalEndpoint where
   writeImpl Regional = writeImpl "regional"
@@ -39,27 +40,38 @@ newtype RoleSessionName
 
 derive instance ntRoleSessionName :: Newtype RoleSessionName _
 
-type STSPropsR = BasicClientPropsR ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint )
+type STSPropsR
+  = BasicClientPropsR ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint )
 
-type STSProps = Record STSPropsR
+type STSProps
+  = Record STSPropsR
 
-makeClient :: forall t10 t6 t7 t8 t9.
-  RowToList t8 t7 => FillableFields t7 () t8 => Union t10 t8
-                                                  STSPropsR 
-                                                 => RowToList t9 t6 => JustifiableFields t6 t9 () t10 => Record t9 -> Effect STS
-makeClient r = ((makeDefaultClient r:: STSProps)) # makeClientHelper newSTS
+makeClient ::
+  forall t10 t6 t7 t8 t9.
+  RowToList t8 t7 =>
+  FillableFields t7 () t8 =>
+  Union
+    t10
+    t8
+    STSPropsR =>
+  RowToList t9 t6 => JustifiableFields t6 t9 () t10 => Record t9 -> Effect STS
+makeClient r = ((makeDefaultClient r :: STSProps)) # makeClientHelper newSTS
 
-makeRegionalClient :: forall t49 t53 t54 t55 t56 t57.
+makeRegionalClient ::
+  forall t49 t53 t54 t55 t56 t57.
   Nub
     ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint
     | t49
     )
-    t53
-   => RowToList t54 t55 => FillableFields t55 () t54 => Union t57 t54
-                                                          STSPropsR
-                                                         => RowToList t53 t56 => JustifiableFields t56 t53 () t57 => Record t49 -> Effect STS
+    t53 =>
+  RowToList t54 t55 =>
+  FillableFields t55 () t54 =>
+  Union
+    t57
+    t54
+    STSPropsR =>
+  RowToList t53 t56 => JustifiableFields t56 t53 () t57 => Record t49 -> Effect STS
 makeRegionalClient = merge { stsRegionalEndpoint: Just Regional } >>> makeClient
-
 
 type InternalAssumeRoleParams
   = { "RoleArn" :: String
@@ -92,10 +104,11 @@ assumeRole sts roleArn externalId roleSessionName = toExternal =<< Promise.toAff
   toCredentials r =
     toMaybe r."Credentials"
       <#> \creds ->
-          justifill { accessKeyId: (AccessKeyId creds."AccessKeyId")
-          , secretAccessKey: (SecretAccessKey creds."SecretAccessKey")
-          , sessionToken: (SessionToken creds."SessionToken")
-          }
+          justifill
+            { accessKeyId: (AccessKeyId creds."AccessKeyId")
+            , secretAccessKey: (SecretAccessKey creds."SecretAccessKey")
+            , sessionToken: (SessionToken creds."SessionToken")
+            }
 
   toExternal :: InternalAssumeRoleResponse -> Aff DefaultClientProps
   toExternal i =
