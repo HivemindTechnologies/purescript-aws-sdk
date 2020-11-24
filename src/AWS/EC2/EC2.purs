@@ -1,8 +1,9 @@
 module AWS.EC2 where
 
 import Prelude
-import AWS.Core.Client (makeClientHelper, makeDefaultClient)
-import AWS.Core.Types (DefaultClientPropsR, Instance, InstanceId(..), InstanceType(..), DefaultClientProps)
+
+import AWS.Core.Client (makeClientHelper)
+import AWS.Core.Types (DefaultClientProps, Instance, InstanceId(..), InstanceType(..))
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Function.Uncurried (Fn1)
@@ -10,25 +11,29 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Foreign (Foreign)
-import Justifill.Fillable (class FillableFields)
-import Justifill.Justifiable (class JustifiableFields)
-import Prim.Row (class Union)
-import Prim.RowList (class RowToList)
+import Justifill (justifillVia)
+import Justifill.Fillable (class Fillable)
+import Justifill.Justifiable (class Justifiable)
+import Type.Proxy (Proxy(..))
 
 foreign import data EC2 :: Type
 
 foreign import newEC2 :: Foreign -> (Effect EC2)
 
 makeClient ::
-  forall t4 t5 t6 t7 t8.
-  RowToList t6 t5 =>
-  FillableFields t5 () t6 =>
-  Union
-    t8
-    t6
-    DefaultClientPropsR =>
-  RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect EC2
-makeClient r = ((makeDefaultClient r :: DefaultClientProps)) # makeClientHelper newEC2
+  forall r via.
+  Justifiable { | r } { | via } =>
+  Fillable { | via } DefaultClientProps =>
+  { | r } ->
+  Effect EC2
+makeClient r = makeClientHelper newEC2 props
+  where
+  viaProxy :: Proxy { | via }
+  viaProxy = Proxy
+
+  props :: DefaultClientProps
+  props = justifillVia viaProxy r
+
 
 type InternalEC2Instance
   = { "InstanceId" :: String, "InstanceType" :: String }

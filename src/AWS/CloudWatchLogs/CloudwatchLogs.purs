@@ -1,8 +1,9 @@
 module AWS.CloudWatchLogs where
 
 import Prelude
-import AWS.Core.Client (makeClientHelper, makeDefaultClient)
-import AWS.Core.Types (DefaultClientPropsR, DefaultClientProps)
+
+import AWS.Core.Client (makeClientHelper)
+import AWS.Core.Types (DefaultClientProps)
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Function.Uncurried (Fn2, runFn2)
@@ -13,25 +14,29 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Foreign (Foreign)
-import Justifill.Fillable (class FillableFields)
-import Justifill.Justifiable (class JustifiableFields)
-import Prim.Row (class Union)
-import Prim.RowList (class RowToList)
+import Justifill (justifillVia)
+import Justifill.Fillable (class Fillable)
+import Justifill.Justifiable (class Justifiable)
+import Type.Proxy (Proxy(..))
 
 foreign import data CloudWatchLogs :: Type
 
 foreign import newCloudWatchLogs :: Foreign -> (Effect CloudWatchLogs)
 
 makeClient ::
-  forall t4 t5 t6 t7 t8.
-  RowToList t6 t5 =>
-  FillableFields t5 () t6 =>
-  Union
-    t8
-    t6
-    DefaultClientPropsR =>
-  RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CloudWatchLogs
-makeClient r = ((makeDefaultClient r :: DefaultClientProps)) # makeClientHelper newCloudWatchLogs
+  forall r via.
+  Justifiable { | r } { | via } =>
+  Fillable { | via } DefaultClientProps =>
+  { | r } ->
+  Effect CloudWatchLogs
+makeClient r = makeClientHelper newCloudWatchLogs props
+  where
+  viaProxy :: Proxy { | via }
+  viaProxy = Proxy
+
+  props :: DefaultClientProps
+  props = justifillVia viaProxy r
+
 
 newtype LogGroupName
   = LogGroupName String
