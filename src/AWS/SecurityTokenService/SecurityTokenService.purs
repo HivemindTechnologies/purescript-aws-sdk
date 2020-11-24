@@ -1,7 +1,8 @@
 module AWS.SecurityTokenService (STS, StsRegionalEndpoint(..), RoleSessionName(..), STSProps, STSPropsR, makeClient, makeRegionalClient, assumeRole) where
 
 import Prelude
-import AWS.Core.Client (makeClientHelper, makeDefaultClient)
+
+import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (AccessKeyId(..), Arn(..), BasicClientPropsR, ExternalId(..), SecretAccessKey(..), SessionToken(..), DefaultClientProps)
 import Control.Promise (Promise)
 import Control.Promise as Promise
@@ -15,13 +16,14 @@ import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Foreign (Foreign)
-import Justifill (justifill)
-import Justifill.Fillable (class FillableFields)
-import Justifill.Justifiable (class JustifiableFields)
+import Justifill (justifill, justifillVia)
+import Justifill.Fillable (class Fillable, class FillableFields)
+import Justifill.Justifiable (class Justifiable, class JustifiableFields)
 import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
 import Record (merge)
 import Simple.JSON (class WriteForeign, writeImpl)
+import Type.Proxy (Proxy(..))
 
 foreign import data STS :: Type
 
@@ -47,30 +49,27 @@ type STSProps
   = Record STSPropsR
 
 makeClient ::
-  forall t10 t6 t7 t8 t9.
-  RowToList t8 t7 =>
-  FillableFields t7 () t8 =>
-  Union
-    t10
-    t8
-    STSPropsR =>
-  RowToList t9 t6 => JustifiableFields t6 t9 () t10 => Record t9 -> Effect STS
-makeClient r = ((makeDefaultClient r :: STSProps)) # makeClientHelper newSTS
+  forall r via.
+  Justifiable { | r } { | via } =>
+  Fillable { | via } STSProps =>
+  { | r } ->
+  Effect STS
+makeClient r = makeClientHelper newSTS props
+  where
+  viaProxy :: Proxy { | via }
+  viaProxy = Proxy
+
+  props :: STSProps
+  props = justifillVia viaProxy r
+
 
 makeRegionalClient ::
-  forall t49 t53 t54 t55 t56 t57.
-  Nub
-    ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint
-    | t49
-    )
-    t53 =>
-  RowToList t54 t55 =>
-  FillableFields t55 () t54 =>
-  Union
-    t57
-    t54
-    STSPropsR =>
-  RowToList t53 t56 => JustifiableFields t56 t53 () t57 => Record t49 -> Effect STS
+  forall r via.
+  Nub ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint | r) STSPropsR => 
+  Justifiable { | r } { | via } =>
+  Fillable { | via } STSProps =>
+  { | r } ->
+  Effect STS
 makeRegionalClient = merge { stsRegionalEndpoint: Just Regional } >>> makeClient
 
 type InternalAssumeRoleParams

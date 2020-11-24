@@ -1,8 +1,9 @@
 module AWS.CloudWatch where
 
 import Prelude
-import AWS.Core.Client (makeClientHelper, makeDefaultClient)
-import AWS.Core.Types (DefaultClientProps, DefaultClientPropsR, InstanceId)
+
+import AWS.Core.Client (makeClientHelper)
+import AWS.Core.Types (DefaultClientProps, InstanceId)
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Bifunctor (lmap)
@@ -17,26 +18,29 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Foreign (Foreign, ForeignError)
-import Justifill.Fillable (class FillableFields)
-import Justifill.Justifiable (class JustifiableFields)
-import Prim.Row (class Union)
-import Prim.RowList (class RowToList)
+import Justifill (justifillVia)
+import Justifill.Fillable (class Fillable)
+import Justifill.Justifiable (class Justifiable)
 import Simple.JSON (readJSON)
+import Type.Proxy (Proxy(..))
 
 foreign import data CloudWatch :: Type
 
 foreign import newCloudWatch :: Foreign -> (Effect CloudWatch)
 
 makeClient ::
-  forall t4 t5 t6 t7 t8.
-  RowToList t6 t5 =>
-  FillableFields t5 () t6 =>
-  Union
-    t8
-    t6
-    DefaultClientPropsR =>
-  RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CloudWatch
-makeClient r = ((makeDefaultClient r :: DefaultClientProps)) # makeClientHelper newCloudWatch
+  forall r via.
+  Justifiable { | r } { | via } =>
+  Fillable { | via } DefaultClientProps =>
+  { | r } ->
+  Effect CloudWatch
+makeClient r = makeClientHelper newCloudWatch props
+  where
+  viaProxy :: Proxy { | via }
+  viaProxy = Proxy
+
+  props :: DefaultClientProps
+  props = justifillVia viaProxy r
 
 type InternalGetMetricsStatisticsParams
   = { "Dimensions" :: Array { "Name" :: String, "Value" :: String }
