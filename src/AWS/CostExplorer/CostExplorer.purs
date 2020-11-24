@@ -1,16 +1,15 @@
 module AWS.CostExplorer where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper, makeDefaultClient)
-import AWS.Core.Types (DefaultClientPropsR, DefaultClientProps)
-import AWS.Core.Util (raiseEither, toIso8601Date)
+import AWS.Core.Util (raiseEither, toIso8601Date, joinNullArr)
+import AWS.Core.Types (DefaultClientProps, DefaultClientPropsR)
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.DateTime (DateTime)
 import Data.Function.Uncurried (Fn2, runFn2)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Nullable (Nullable, notNull, toMaybe, toNullable)
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, toMaybe, null)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Foreign (Foreign)
@@ -18,17 +17,24 @@ import Justifill.Fillable (class FillableFields)
 import Justifill.Justifiable (class JustifiableFields)
 import Prim.Row (class Union)
 import Prim.RowList (class RowToList)
+import Data.Formatter.DateTime (unformatDateTime)
+import Data.Either (hush, Either)
+import AWS.CostExplorer.Types (CostAndUsage, DateInterval, Group, GroupDefinition, MetricValue, NextPageToken(..), ResultByTime, Key(..), Amount(..), Metric)
 
 foreign import data CE :: Type
 
 foreign import newCE :: Foreign -> (Effect CE)
 
-
-makeClient :: forall t4 t5 t6 t7 t8.
-  RowToList t6 t5 => FillableFields t5 () t6 => Union t8 t6
-                                                  DefaultClientPropsR
-                                                 => RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CE
-makeClient r = ((makeDefaultClient r:: DefaultClientProps)) # makeClientHelper newCE
+makeClient ::
+  forall t4 t5 t6 t7 t8.
+  RowToList t6 t5 =>
+  FillableFields t5 () t6 =>
+  Union
+    t8
+    t6
+    DefaultClientPropsR =>
+  RowToList t7 t4 => JustifiableFields t4 t7 () t8 => Record t7 -> Effect CE
+makeClient r = ((makeDefaultClient r :: DefaultClientProps)) # makeClientHelper newCE
 
 -- https://github.com/aws/aws-sdk-js/blob/dabf8b11e6e0d61d4dc2ab62717b8735fb8b29e4/clients/costexplorer.d.ts#L649
 type InternalGetCostAndUsageResponse
@@ -37,23 +43,62 @@ type InternalGetCostAndUsageResponse
     , "NextPageToken" :: Nullable (String)
     }
 
+toCostAndUsage :: InternalGetCostAndUsageResponse -> CostAndUsage
+toCostAndUsage internal =
+  { resultsByTime: joinNullArr internal."ResultsByTime" <#> toResultByTime
+  , groupDefinitions: joinNullArr internal."GroupDefinitions" <#> toGroupDefinition
+  , nextPageToken: toMaybe internal."NextPageToken" <#> NextPageToken
+  }
+
 type InternalGroupDefinition
   = { "Key" :: Nullable String }
+
+toGroupDefinition :: InternalGroupDefinition -> GroupDefinition
+toGroupDefinition internal = { key: toMaybe internal."Key" <#> Key }
 
 type InternalResultByTime
   = { "TimePeriod" :: Nullable InternalDateInterval, "Groups" :: Nullable (Array InternalGroup) }
 
+toResultByTime :: InternalResultByTime -> ResultByTime
+toResultByTime internal =
+  { timePeriod: toMaybe internal."TimePeriod" >>= toDateInterval
+  , groups: joinNullArr internal."Groups" <#> toGroup
+  }
+
 type InternalDateInterval
-  = { "Start" :: String }
+  = { "Start" :: String, "End" :: String }
+
+parseDateTime :: String -> Either String DateTime
+parseDateTime = unformatDateTime "YYYY-MM-DD"
+
+toDateInterval :: InternalDateInterval -> Maybe DateInterval
+toDateInterval internal =
+  hush
+    $ do
+        start <- parseDateTime internal."Start"
+        end <- parseDateTime internal."End"
+        pure { start, end }
 
 type InternalGroup
   = { "Keys" :: Nullable (Array String), "Metrics" :: Nullable InternalMetric }
 
+toGroup :: InternalGroup -> Group
+toGroup internal =
+  { keys: joinNullArr internal."Keys" <#> Key
+  , metrics: toMaybe internal."Metrics" <#> toMetric
+  }
+
 type InternalMetric
   = { "UnblendedCost" :: Nullable InternalMetricValue }
 
+toMetric :: InternalMetric -> Metric
+toMetric internal = { unblendedCost: toMaybe internal."UnblendedCost" <#> toMetricValue }
+
 type InternalMetricValue
   = { "Amount" :: Nullable String }
+
+toMetricValue :: InternalMetricValue -> MetricValue
+toMetricValue internal = { amount: toMaybe internal."Amount" <#> Amount }
 
 foreign import getCostAndUsageImpl :: Fn2 CE InternalGetCostAndUsageParams (Effect (Promise InternalGetCostAndUsageResponse))
 
@@ -63,26 +108,26 @@ type InternalGetCostAndUsageParams
     , "GroupBy" :: Array { "Key" :: String, "Type" :: String }
     , "Metrics" :: Array String
     , "TimePeriod" :: { "End" :: String, "Start" :: String }
-    , "NextPageToken" :: Nullable (String)
+    , "NextPageToken" :: Nullable String
     }
 
 getCostAndUsage ::
-  forall a.
   CE ->
-  { start :: DateTime, end :: DateTime | a } ->
-  Aff InternalGetCostAndUsageResponse
+  DateInterval ->
+  Aff CostAndUsage
 getCostAndUsage ce range = do
   start <- raiseEither $ toIso8601Date range.start
   end <- raiseEither $ toIso8601Date range.end
-  _getCostAndUsage ce start end Nothing
+  internalResp <- _getCostAndUsage ce start end null
+  pure (toCostAndUsage internalResp)
 
 _getCostAndUsage ::
   CE ->
   String ->
   String ->
-  Maybe InternalGetCostAndUsageResponse ->
+  Nullable String ->
   Aff InternalGetCostAndUsageResponse
-_getCostAndUsage ce start end previousResult = do
+_getCostAndUsage ce start end nextPageToken = do
   result <-
     Promise.toAffE
       $ runFn2 getCostAndUsageImpl ce
@@ -100,29 +145,6 @@ _getCostAndUsage ce start end previousResult = do
                 }
               ]
           , "Metrics": [ "UnblendedCost" ]
-          -- , "NextPageToken": (maybe null (\r -> r."NextPageToken") previousResult)
-          , "NextPageToken": (toNullable $ previousResult >>= \pr -> toMaybe pr."NextPageToken")
+          , "NextPageToken": nextPageToken
           }
-  let
-    mergedResult =
-      { "ResultsByTime":
-          notNull
-            $ ( maybe
-                  mempty
-                  (\pr -> fromMaybe mempty (toMaybe pr."ResultsByTime"))
-                  previousResult
-              )
-            <> (fromMaybe mempty (toMaybe result."ResultsByTime"))
-      , "GroupDefinitions":
-          notNull
-            $ ( maybe
-                  mempty
-                  (\pr -> fromMaybe mempty (toMaybe pr."GroupDefinitions"))
-                  previousResult
-              )
-            <> (fromMaybe mempty (toMaybe result."GroupDefinitions"))
-      , "NextPageToken": result."NextPageToken"
-      }
-  case (toMaybe result."NextPageToken") of
-    Just _ -> _getCostAndUsage ce start end (Just mergedResult)
-    Nothing -> pure mergedResult
+  pure result
