@@ -1,7 +1,6 @@
 module AWS.Lambda where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (Arn(..), DefaultClientProps)
 import Control.Promise (Promise, toAffE)
@@ -37,7 +36,6 @@ makeClient r = makeClientHelper newLambda props
 
   props :: DefaultClientProps
   props = justifillVia viaProxy r
-
 
 foreign import invokeImpl :: forall output. Fn2 Lambda InternalLambdaParams (Effect (Promise output))
 

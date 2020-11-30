@@ -1,7 +1,6 @@
 module AWS.EC2 where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Instance, InstanceId(..), InstanceType(..))
 import Control.Promise (Promise)
@@ -33,7 +32,6 @@ makeClient r = makeClientHelper newEC2 props
 
   props :: DefaultClientProps
   props = justifillVia viaProxy r
-
 
 type InternalEC2Instance
   = { "InstanceId" :: String, "InstanceType" :: String }

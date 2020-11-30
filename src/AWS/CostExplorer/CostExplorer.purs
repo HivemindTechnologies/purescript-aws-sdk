@@ -21,7 +21,6 @@ import Data.Formatter.DateTime (unformatDateTime)
 import Data.Either (hush, Either)
 import AWS.CostExplorer.Types (CostAndUsage, DateInterval, Group, GroupDefinition, MetricValue, NextPageToken(..), ResultByTime, Key(..), Amount(..), Metric)
 
-
 foreign import data CE :: Type
 
 foreign import newCE :: Foreign -> (Effect CE)
