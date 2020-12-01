@@ -17,7 +17,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (throw)
 import Foreign (Foreign)
 import Justifill (justifill, justifillVia)
-import Justifill.Fillable (class Fillable, class FillableFields)
+import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable, class JustifiableFields)
 import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
@@ -62,15 +62,16 @@ makeClient r = makeClientHelper newSTS props
   props :: STSProps
   props = justifillVia viaProxy r
 
-
-makeRegionalClient ::
-  forall r via.
-  Nub ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint | r) STSPropsR => 
-  Justifiable { | r } { | via } =>
+-- | Make a sts client that uses regional sts service endpoints instead of the global (legacy)
+makeRegionalClient ::  forall r rSts rStsNubbed rStsNubbedL via. 
+  Union r ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint) rSts =>
+  Nub rSts rStsNubbed  =>
+  RowToList rStsNubbed rStsNubbedL =>
+  JustifiableFields rStsNubbedL rStsNubbed () via =>
   Fillable { | via } STSProps =>
   { | r } ->
   Effect STS
-makeRegionalClient = merge { stsRegionalEndpoint: Just Regional } >>> makeClient
+makeRegionalClient props = merge props { stsRegionalEndpoint: Just Regional } # makeClient
 
 type InternalAssumeRoleParams
   = { "RoleArn" :: String
