@@ -1,6 +1,6 @@
 module AWS.CloudWatchLogs where
 
-import Prelude
+import Prelude (class Show)
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Promise (Promise)
@@ -17,6 +17,8 @@ import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Type.Proxy (Proxy(..))
+import Data.Newtype (class Newtype)
+import Simple.JSON (class WriteForeign, class ReadForeign)
 
 foreign import data CloudWatchLogs :: Type
 
@@ -39,42 +41,52 @@ makeClient r = makeClientHelper newCloudWatchLogs props
 newtype LogGroupName
   = LogGroupName String
 
+derive instance ntLogGroupName :: Newtype LogGroupName _
+
+derive newtype instance showLogGroupName :: Show LogGroupName
+
+derive newtype instance wfLogGroupName :: WriteForeign LogGroupName
+
+derive newtype instance rfLogGroupName :: ReadForeign LogGroupName
+
 data RetentionInDays
-  = Retention1
-  | Retention3
-  | Retention5
-  | Retention7
-  | Retention14
-  | Retention30
-  | Retention60
-  | Retention90
-  | Retention120
-  | Retention150
-  | Retention180
-  | Retention365
-  | Retention400
-  | Retention545
-  | Retention731
-  | Retention1827
+  = Retention1Day
+  | Retention3Days
+  | Retention5Days
+  | Retention1Week
+  | Retention2Weeks
+  | Retention1Month
+  | Retention2Months
+  | Retention3Months
+  | Retention4Months
+  | Retention5Months
+  | Retention6Months
+  | Retention12Months
+  | Retention13Months
+  | Retention18Months
+  | Retention24Months
+  | Retention60Months
+  | Retention120Months
 
 toRetentionInDaysInt :: RetentionInDays -> Int
 toRetentionInDaysInt retention = case retention of
-  Retention1 -> 1
-  Retention3 -> 3
-  Retention5 -> 5
-  Retention7 -> 7
-  Retention14 -> 14
-  Retention30 -> 30
-  Retention60 -> 60
-  Retention90 -> 90
-  Retention120 -> 120
-  Retention150 -> 150
-  Retention180 -> 180
-  Retention365 -> 365
-  Retention400 -> 400
-  Retention545 -> 545
-  Retention731 -> 731
-  Retention1827 -> 1827
+  Retention1Day -> 1
+  Retention3Days -> 3
+  Retention5Days -> 5
+  Retention1Week -> 7
+  Retention2Weeks -> 14
+  Retention1Month -> 30
+  Retention2Months -> 60
+  Retention3Months -> 90
+  Retention4Months -> 120
+  Retention5Months -> 150
+  Retention6Months -> 180
+  Retention12Months -> 365
+  Retention13Months -> 400
+  Retention18Months -> 545
+  Retention24Months -> 731
+  Retention60Months -> 1827
+  Retention120Months -> 3653
 
 type InternalDescribeLogGroupsResponse
   = { logGroups :: Array InternalLogGroup }
