@@ -1,6 +1,6 @@
 module AWS.CloudWatchLogs where
 
-import Prelude (class Show)
+import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Promise (Promise)
