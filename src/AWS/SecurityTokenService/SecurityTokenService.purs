@@ -1,7 +1,6 @@
 module AWS.SecurityTokenService (STS, StsRegionalEndpoint(..), RoleSessionName(..), STSProps, STSPropsR, makeClient, makeRegionalClient, assumeRole) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (AccessKeyId(..), Arn(..), BasicClientPropsR, ExternalId(..), SecretAccessKey(..), SessionToken(..), DefaultClientProps)
 import Control.Promise (Promise)
@@ -63,9 +62,10 @@ makeClient r = makeClientHelper newSTS props
   props = justifillVia viaProxy r
 
 -- | Make a sts client that uses regional sts service endpoints instead of the global (legacy)
-makeRegionalClient ::  forall r rSts rStsNubbed rStsNubbedL via. 
-  Union r ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint) rSts =>
-  Nub rSts rStsNubbed  =>
+makeRegionalClient ::
+  forall r rSts rStsNubbed rStsNubbedL via.
+  Union r ( stsRegionalEndpoint :: Maybe StsRegionalEndpoint ) rSts =>
+  Nub rSts rStsNubbed =>
   RowToList rStsNubbed rStsNubbedL =>
   JustifiableFields rStsNubbedL rStsNubbed () via =>
   Fillable { | via } STSProps =>

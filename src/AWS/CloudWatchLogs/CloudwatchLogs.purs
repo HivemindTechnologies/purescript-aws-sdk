@@ -1,12 +1,11 @@
 module AWS.CloudWatchLogs where
 
-import Prelude
-
+import Prelude (class Show)
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Promise (Promise)
 import Control.Promise as Promise
-import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
@@ -18,6 +17,8 @@ import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Type.Proxy (Proxy(..))
+import Data.Newtype (class Newtype)
+import Simple.JSON (class WriteForeign, class ReadForeign)
 
 foreign import data CloudWatchLogs :: Type
 
@@ -37,9 +38,55 @@ makeClient r = makeClientHelper newCloudWatchLogs props
   props :: DefaultClientProps
   props = justifillVia viaProxy r
 
-
 newtype LogGroupName
   = LogGroupName String
+
+derive instance ntLogGroupName :: Newtype LogGroupName _
+
+derive newtype instance showLogGroupName :: Show LogGroupName
+
+derive newtype instance wfLogGroupName :: WriteForeign LogGroupName
+
+derive newtype instance rfLogGroupName :: ReadForeign LogGroupName
+
+data RetentionInDays
+  = Retention1Day
+  | Retention3Days
+  | Retention5Days
+  | Retention1Week
+  | Retention2Weeks
+  | Retention1Month
+  | Retention2Months
+  | Retention3Months
+  | Retention4Months
+  | Retention5Months
+  | Retention6Months
+  | Retention12Months
+  | Retention13Months
+  | Retention18Months
+  | Retention24Months
+  | Retention60Months
+  | Retention120Months
+
+toRetentionInDaysInt :: RetentionInDays -> Int
+toRetentionInDaysInt retention = case retention of
+  Retention1Day -> 1
+  Retention3Days -> 3
+  Retention5Days -> 5
+  Retention1Week -> 7
+  Retention2Weeks -> 14
+  Retention1Month -> 30
+  Retention2Months -> 60
+  Retention3Months -> 90
+  Retention4Months -> 120
+  Retention5Months -> 150
+  Retention6Months -> 180
+  Retention12Months -> 365
+  Retention13Months -> 400
+  Retention18Months -> 545
+  Retention24Months -> 731
+  Retention60Months -> 1827
+  Retention120Months -> 3653
 
 type InternalDescribeLogGroupsResponse
   = { logGroups :: Array InternalLogGroup }
@@ -123,3 +170,10 @@ describeLogStreams cloudWatchLogs (LogGroupName name) = liftEffect (curried clou
 
   curried :: CloudWatchLogs -> String -> Effect (Promise InternalDescribeLogStreamsResponse)
   curried = (runFn2 describeLogStreamsImpl)
+
+foreign import putRetentionPolicyImpl :: Fn3 CloudWatchLogs String Int (Effect (Promise Unit))
+
+putRetentionPolicy :: CloudWatchLogs -> LogGroupName -> RetentionInDays -> Aff Unit
+putRetentionPolicy cw (LogGroupName name) retention =
+  Promise.toAffE
+    $ runFn3 putRetentionPolicyImpl cw name (toRetentionInDaysInt $ retention)
