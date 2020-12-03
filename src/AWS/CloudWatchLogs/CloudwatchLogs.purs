@@ -6,8 +6,8 @@ import AWS.Core.Types (DefaultClientProps)
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
-import Data.Maybe (Maybe)
-import Data.Nullable (Nullable)
+import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -18,7 +18,7 @@ import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Type.Proxy (Proxy(..))
 import Data.Newtype (class Newtype)
-import Simple.JSON (class WriteForeign, class ReadForeign)
+import Simple.JSON (class WriteForeign, class ReadForeign, writeImpl)
 
 foreign import data CloudWatchLogs :: Type
 
@@ -67,26 +67,74 @@ data RetentionInDays
   | Retention24Months
   | Retention60Months
   | Retention120Months
+  | NoRetention
 
-toRetentionInDaysInt :: RetentionInDays -> Int
-toRetentionInDaysInt retention = case retention of
-  Retention1Day -> 1
-  Retention3Days -> 3
-  Retention5Days -> 5
-  Retention1Week -> 7
-  Retention2Weeks -> 14
-  Retention1Month -> 30
-  Retention2Months -> 60
-  Retention3Months -> 90
-  Retention4Months -> 120
-  Retention5Months -> 150
-  Retention6Months -> 180
-  Retention12Months -> 365
-  Retention13Months -> 400
-  Retention18Months -> 545
-  Retention24Months -> 731
-  Retention60Months -> 1827
-  Retention120Months -> 3653
+instance writeForeignRetentionInDays :: WriteForeign RetentionInDays where
+  writeImpl Retention1Day = writeImpl "1"
+  writeImpl Retention3Days = writeImpl "3"
+  writeImpl Retention5Days = writeImpl "5"
+  writeImpl Retention1Week = writeImpl "7"
+  writeImpl Retention2Weeks = writeImpl "14"
+  writeImpl Retention1Month = writeImpl "30"
+  writeImpl Retention2Months = writeImpl "60"
+  writeImpl Retention3Months = writeImpl "90"
+  writeImpl Retention4Months = writeImpl "120"
+  writeImpl Retention5Months = writeImpl "150"
+  writeImpl Retention6Months = writeImpl "180"
+  writeImpl Retention12Months = writeImpl "365"
+  writeImpl Retention13Months = writeImpl "400"
+  writeImpl Retention18Months = writeImpl "545"
+  writeImpl Retention24Months = writeImpl "731"
+  writeImpl Retention60Months = writeImpl "1827"
+  writeImpl Retention120Months = writeImpl "3653"
+  writeImpl NoRetention = writeImpl "no retention"
+
+retentionToInt :: RetentionInDays -> Maybe Int
+retentionToInt retention = case retention of
+  Retention1Day -> Just (0)
+  Retention3Days -> Just (2)
+  Retention5Days -> Just (5)
+  Retention1Week -> Just (7)
+  Retention2Weeks -> Just (14)
+  Retention1Month -> Just (30)
+  Retention2Months -> Just (60)
+  Retention3Months -> Just (90)
+  Retention4Months -> Just (120)
+  Retention5Months -> Just (150)
+  Retention6Months -> Just (180)
+  Retention12Months -> Just (365)
+  Retention13Months -> Just (400)
+  Retention18Months -> Just (545)
+  Retention24Months -> Just (731)
+  Retention60Months -> Just (1827)
+  Retention120Months -> Just (3653)
+  NoRetention -> Nothing
+
+toRetention :: Maybe Int -> RetentionInDays
+toRetention retention = case retention of
+  Just (1) -> Retention1Day
+  Just (3) -> Retention3Days
+  Just (5) -> Retention5Days
+  Just (7) -> Retention1Week
+  Just (14) -> Retention2Weeks
+  Just (30) -> Retention1Month
+  Just (60) -> Retention2Months
+  Just (90) -> Retention3Months
+  Just (120) -> Retention4Months
+  Just (150) -> Retention5Months
+  Just (180) -> Retention6Months
+  Just (365) -> Retention12Months
+  Just (400) -> Retention13Months
+  Just (545) -> Retention18Months
+  Just (731) -> Retention24Months
+  Just (1827) -> Retention60Months
+  Just (_) -> NoRetention
+  Nothing -> NoRetention
+
+type RetentionSettings
+  = { logGroupName :: LogGroupName
+    , retentionInDays :: RetentionInDays
+    }
 
 type InternalDescribeLogGroupsResponse
   = { logGroups :: Array InternalLogGroup }
@@ -171,9 +219,9 @@ describeLogStreams cloudWatchLogs (LogGroupName name) = liftEffect (curried clou
   curried :: CloudWatchLogs -> String -> Effect (Promise InternalDescribeLogStreamsResponse)
   curried = (runFn2 describeLogStreamsImpl)
 
-foreign import putRetentionPolicyImpl :: Fn3 CloudWatchLogs String Int (Effect (Promise Unit))
+foreign import putRetentionPolicyImpl :: Fn3 CloudWatchLogs String (Nullable Int) (Effect (Promise Unit))
 
 putRetentionPolicy :: CloudWatchLogs -> LogGroupName -> RetentionInDays -> Aff Unit
 putRetentionPolicy cw (LogGroupName name) retention =
   Promise.toAffE
-    $ runFn3 putRetentionPolicyImpl cw name (toRetentionInDaysInt $ retention)
+    $ runFn3 putRetentionPolicyImpl cw name (toNullable $ retentionToInt $ retention)
