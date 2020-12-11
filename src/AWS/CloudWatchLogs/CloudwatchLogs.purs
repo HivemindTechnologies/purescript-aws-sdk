@@ -19,6 +19,8 @@ import Justifill.Justifiable (class Justifiable)
 import Type.Proxy (Proxy(..))
 import Data.Newtype (class Newtype)
 import Simple.JSON (class WriteForeign, class ReadForeign, writeImpl)
+import Control.Monad.Error.Class (throwError)
+import Effect.Exception (error)
 
 foreign import data CloudWatchLogs :: Type
 
@@ -220,8 +222,20 @@ describeLogStreams cloudWatchLogs (LogGroupName name) = liftEffect (curried clou
   curried = (runFn2 describeLogStreamsImpl)
 
 foreign import putRetentionPolicyImpl :: Fn3 CloudWatchLogs String (Nullable Int) (Effect (Promise Unit))
+foreign import deleteRetentionPolicyImpl :: Fn2 CloudWatchLogs String (Effect (Promise Unit))
 
+-- | Sets the retention policy for the log group.
+-- | For setting NoRetention aka `Never Expire` use `deleteRetentionPolicy`. 
 putRetentionPolicy :: CloudWatchLogs -> LogGroupName -> RetentionInDays -> Aff Unit
+putRetentionPolicy cw (LogGroupName name) NoRetention =
+  throwError $ error "Setting RetentionPolicy to NoRetention is not allowed. Use deleteRetentionPolicy instead."
 putRetentionPolicy cw (LogGroupName name) retention =
   Promise.toAffE
     $ runFn3 putRetentionPolicyImpl cw name (toNullable $ retentionToInt $ retention)
+    
+-- | Deletes the retention policy from the log group, i.e. set's it to NoRetention aka `Never Expire`.
+-- | For setting a retention policy use `putRetentionPolicy` instead.
+deleteRetentionPolicy :: CloudWatchLogs -> LogGroupName -> Aff Unit
+deleteRetentionPolicy cw (LogGroupName name) =
+  Promise.toAffE
+    $ runFn2 deleteRetentionPolicyImpl cw name 

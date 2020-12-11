@@ -14,3 +14,6 @@ exports.describeLogStreamsImpl = (cw, groupName) =>
 
 exports.putRetentionPolicyImpl = (cw, groupName, retention) =>
   () => cw.putRetentionPolicy({ logGroupName: groupName, retentionInDays: retention }).promise()
+
+exports.deleteRetentionPolicyImpl = (cw, groupName) =>
+  () => cw.deleteRetentionPolicy({ logGroupName: groupName }).promise()
