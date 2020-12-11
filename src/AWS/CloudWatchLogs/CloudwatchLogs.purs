@@ -91,8 +91,8 @@ instance writeForeignRetentionInDays :: WriteForeign RetentionInDays where
 
 retentionToInt :: RetentionInDays -> Maybe Int
 retentionToInt retention = case retention of
-  Retention1Day -> Just (0)
-  Retention3Days -> Just (2)
+  Retention1Day -> Just (1)
+  Retention3Days -> Just (3)
   Retention5Days -> Just (5)
   Retention1Week -> Just (7)
   Retention2Weeks -> Just (14)
