@@ -130,6 +130,7 @@ toRetention retention = case retention of
   Just (545) -> Retention18Months
   Just (731) -> Retention24Months
   Just (1827) -> Retention60Months
+  Just (3653) -> Retention120Months
   Just (_) -> NoRetention
   Nothing -> NoRetention
 
