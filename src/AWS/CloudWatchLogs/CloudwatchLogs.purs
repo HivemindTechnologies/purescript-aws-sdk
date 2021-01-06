@@ -3,24 +3,24 @@ module AWS.CloudWatchLogs where
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
+import Control.Monad.Error.Class (throwError)
 import Control.Promise (Promise)
 import Control.Promise as Promise
-import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
+import Data.Function.Uncurried (Fn2, Fn3, Fn5, runFn2, runFn3, runFn5)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
+import Effect.Exception (error)
 import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
-import Type.Proxy (Proxy(..))
-import Data.Newtype (class Newtype)
 import Simple.JSON (class WriteForeign, class ReadForeign, writeImpl)
-import Control.Monad.Error.Class (throwError)
-import Effect.Exception (error)
+import Type.Proxy (Proxy(..))
 
 foreign import data CloudWatchLogs :: Type
 
@@ -42,6 +42,15 @@ makeClient r = makeClientHelper newCloudWatchLogs props
 
 newtype LogGroupName
   = LogGroupName String
+
+newtype Destination
+  = Destination String
+
+newtype From
+  = From Number
+
+newtype To
+  = To Number
 
 derive instance ntLogGroupName :: Newtype LogGroupName _
 
@@ -184,6 +193,13 @@ type LogStream
 type DescribeLogStreamsResponse
   = { logStreams :: Array LogStream }
 
+type ExportTaskParams
+  = { destination :: Destination
+    , from :: From
+    , logGroupName :: LogGroupName
+    , to :: To
+    }
+
 foreign import describeLogGroupsImpl :: CloudWatchLogs -> (Effect (Promise InternalDescribeLogGroupsResponse))
 
 describeLogGroups :: CloudWatchLogs -> Aff DescribeLogGroupsResponse
@@ -223,20 +239,28 @@ describeLogStreams cloudWatchLogs (LogGroupName name) = liftEffect (curried clou
   curried = (runFn2 describeLogStreamsImpl)
 
 foreign import putRetentionPolicyImpl :: Fn3 CloudWatchLogs String (Nullable Int) (Effect (Promise Unit))
+
 foreign import deleteRetentionPolicyImpl :: Fn2 CloudWatchLogs String (Effect (Promise Unit))
 
 -- | Sets the retention policy for the log group.
 -- | For setting NoRetention aka `Never Expire` use `deleteRetentionPolicy`. 
 putRetentionPolicy :: CloudWatchLogs -> LogGroupName -> RetentionInDays -> Aff Unit
-putRetentionPolicy cw (LogGroupName name) NoRetention =
-  throwError $ error "Setting RetentionPolicy to NoRetention is not allowed. Use deleteRetentionPolicy instead."
+putRetentionPolicy cw (LogGroupName name) NoRetention = throwError $ error "Setting RetentionPolicy to NoRetention is not allowed. Use deleteRetentionPolicy instead."
+
 putRetentionPolicy cw (LogGroupName name) retention =
   Promise.toAffE
     $ runFn3 putRetentionPolicyImpl cw name (toNullable $ retentionToInt $ retention)
-    
+
 -- | Deletes the retention policy from the log group, i.e. set's it to NoRetention aka `Never Expire`.
 -- | For setting a retention policy use `putRetentionPolicy` instead.
 deleteRetentionPolicy :: CloudWatchLogs -> LogGroupName -> Aff Unit
 deleteRetentionPolicy cw (LogGroupName name) =
   Promise.toAffE
-    $ runFn2 deleteRetentionPolicyImpl cw name 
+    $ runFn2 deleteRetentionPolicyImpl cw name
+
+foreign import createExportTaskImpl :: Fn5 CloudWatchLogs String Number String Number (Effect (Promise Unit))
+
+createExportTask :: CloudWatchLogs -> Destination -> From -> LogGroupName -> To -> Aff Unit
+createExportTask cw (Destination destination) (From from) (LogGroupName logGroupName) (To to) =
+  Promise.toAffE
+    $ runFn5 createExportTaskImpl cw destination from logGroupName to
