@@ -17,3 +17,6 @@ exports.putRetentionPolicyImpl = (cw, groupName, retention) =>
 
 exports.deleteRetentionPolicyImpl = (cw, groupName) =>
   () => cw.deleteRetentionPolicy({ logGroupName: groupName }).promise()
+
+exports.createExportTaskImpl = (cw, destination, from, logGroupName, to) => 
+  () => cw.createExportTask({destination: destination, from: from, logGroupName: logGroupName, to: to}).promise()
