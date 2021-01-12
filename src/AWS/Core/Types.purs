@@ -1,9 +1,10 @@
 module AWS.Core.Types where
 
-import Prelude (class Show)
-import Data.Newtype (class Newtype)
-import Simple.JSON (class WriteForeign)
 import Data.Maybe (Maybe)
+import Data.Newtype (class Newtype)
+import Foreign (Foreign, tagOf)
+import Prelude (class Show)
+import Simple.JSON (class WriteForeign)
 
 newtype AccessKeyId
   = AccessKeyId String
@@ -60,11 +61,23 @@ derive instance ntInstanceType :: Newtype InstanceType _
 
 derive newtype instance showInstanceType :: Show InstanceType
 
+newtype Credentials
+  = Credentials Foreign
+
+derive instance ntCredentials :: Newtype Credentials _
+
+instance showCredentials :: Show Credentials where
+  show (Credentials credentials) = tagOf credentials
+
+instance writeCreds :: WriteForeign Credentials where
+  writeImpl (Credentials creds) = creds
+
 type BasicClientPropsR r
   = ( accessKeyId :: Maybe AccessKeyId
     , secretAccessKey :: Maybe SecretAccessKey
     , region :: Maybe Region
     , sessionToken :: Maybe SessionToken
+    , credentials :: (Maybe Credentials)
     | r
     )
 
