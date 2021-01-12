@@ -13,6 +13,7 @@ Currently we have some functionality for the following modules:
 * EC2
 * Lambda
 * SecurityTokenService (STS)
+* DynamoDB
 
 While we do not have any plans to support other features that we currently don't use, we do welcome contributions of missing features. 
 
