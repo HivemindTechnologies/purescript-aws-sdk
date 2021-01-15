@@ -4,9 +4,10 @@ Purescript wrapper for AWS SDK. See [usage](#usage)
 
 ## tl;dr
 
-This is a Purescript wrapper for the AWS JavaScript SDK that we use for our projects at [Hivemind Technologies AG](https://hivemindtechnologies.com). Rather than aiming for a full compatibility of the AWS SDK, we strive for a wrapper that is Purescript-idomatic and covers the things that we need. If you are looking for a more complete but less idiomatic library, you might want to have a look into [purescript-aws-sdk](https://github.com/purescript-aws-sdk), which auto-generates Purescript code from the AWS SDK sources. 
+This is a Purescript wrapper for the AWS JavaScript SDK that we use for our projects at [Hivemind Technologies AG](https://hivemindtechnologies.com). Rather than aiming for a full compatibility of the AWS SDK, we strive for a wrapper that is Purescript-idomatic and covers the things that we need. If you are looking for a more complete but less idiomatic library, you might want to have a look into [purescript-aws-sdk](https://github.com/purescript-aws-sdk), which auto-generates Purescript code from the AWS SDK sources.
 
 Currently we have some functionality for the following modules:
+
 * CloudWatch
 * CloudWatchLogs
 * CostExplorer
@@ -16,16 +17,15 @@ Currently we have some functionality for the following modules:
 * DynamoDB
 * SecretsManager
 * KMS
+* S3
 
-While we do not have any plans to support other features that we currently don't use, we do welcome contributions of missing features. 
-
+While we do not have any plans to support other features that we currently don't use, we do welcome contributions of missing features.
 
 ## Installation
 
 Add `purescript-aws-sdk` and `justifill` to your `packages.dhall` and `spago.dhall`. For more information on how to add a dependency to your spago project, see the [spago documentation](https://github.com/purescript/spago#add-a-package-to-the-package-set).
 
 ❗Don't forget to update the **version** ot the repo according to the available [tags](https://github.com/HivemindTechnologies/purescript-aws-sdk/tags).
-
 
 ## Usage
 
