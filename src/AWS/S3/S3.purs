@@ -1,16 +1,10 @@
-module AWS.S3
-  ( S3
-  , makeClient
-  , GetObjectParams
-  , GetObjectResponse
-  , getObject
-  ) where
+module AWS.S3 where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Promise (Promise, toAffE)
-import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Foreign (Foreign)
@@ -19,6 +13,7 @@ import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Node.Buffer (Buffer)
 import Type.Proxy (Proxy(..))
+import AWS.Core.Types (DefaultClientProps, Region(..))
 
 foreign import data S3 :: Type
 
@@ -79,3 +74,19 @@ getObject client input = runFn2 getObjectImpl client params # toAffE <#> convert
     , contentEncoding: internalResponse."ContentEncoding"
     , contentType: internalResponse."ContentType"
     }
+
+foreign import createBucketImpl :: Fn3 S3 String InternalBucketConfiguration (Effect (Promise Unit))
+
+type InternalBucketConfiguration
+  = { "LocationConstraint" :: String }
+
+newtype BucketName
+  = BucketName String
+
+createBucket :: S3 -> BucketName -> Region -> Aff Unit
+createBucket s3 (BucketName name) (Region region) =
+  toAffE
+    $ runFn3 createBucketImpl s3 name bucketConfig
+  where
+  bucketConfig :: InternalBucketConfiguration
+  bucketConfig = { "LocationConstraint": region }
