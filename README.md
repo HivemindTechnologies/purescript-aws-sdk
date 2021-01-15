@@ -14,6 +14,7 @@ Currently we have some functionality for the following modules:
 * Lambda
 * SecurityTokenService (STS)
 * DynamoDB
+* SecretsManager
 
 While we do not have any plans to support other features that we currently don't use, we do welcome contributions of missing features. 
 
