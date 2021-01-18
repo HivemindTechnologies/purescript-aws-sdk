@@ -10,3 +10,6 @@ exports.getObjectImpl = (s3, params) => () => s3
 
 exports.createBucketImpl = (s3, bucket, config) =>
       () => s3.createBucket({ Bucket: bucket, CreateBucketConfiguration: config }).promise()
+
+exports.putBucketPolicyImpl = (s3, bucket, policy) =>
+  () => s3.putBucketPolicy({ Bucket: bucket, Policy: policy }).promise()

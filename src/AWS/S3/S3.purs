@@ -1,8 +1,7 @@
 module AWS.S3 where
 
-import Prelude
 import AWS.Core.Client (makeClientHelper)
-import AWS.Core.Types (DefaultClientProps)
+import AWS.Core.Types (DefaultClientProps, Region(..))
 import Control.Promise (Promise, toAffE)
 import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
 import Effect (Effect)
@@ -11,9 +10,10 @@ import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
+import Prelude (Unit, ($), class Show, (#), (<#>))
 import Node.Buffer (Buffer)
 import Type.Proxy (Proxy(..))
-import AWS.Core.Types (DefaultClientProps, Region(..))
+import Data.Newtype (class Newtype)
 
 foreign import data S3 :: Type
 
@@ -80,8 +80,15 @@ foreign import createBucketImpl :: Fn3 S3 String InternalBucketConfiguration (Ef
 type InternalBucketConfiguration
   = { "LocationConstraint" :: String }
 
+type CreateBucketResponse
+  = { location :: String }
+
 newtype BucketName
   = BucketName String
+
+derive instance ntBucketName :: Newtype BucketName _
+
+derive newtype instance showBucketName :: Show BucketName
 
 createBucket :: S3 -> BucketName -> Region -> Aff Unit
 createBucket s3 (BucketName name) (Region region) =
@@ -90,3 +97,22 @@ createBucket s3 (BucketName name) (Region region) =
   where
   bucketConfig :: InternalBucketConfiguration
   bucketConfig = { "LocationConstraint": region }
+
+foreign import putBucketPolicyImpl :: Fn3 S3 String String (Effect (Promise Unit))
+
+type BucketPolicyParams
+  = { name :: BucketName
+    , policy :: BucketPolicy
+    }
+
+newtype BucketPolicy
+  = BucketPolicy String
+
+derive instance ntBucketPolicy :: Newtype BucketPolicy _
+
+derive newtype instance showBucketPolicy :: Show BucketPolicy
+
+putBucketPolicy :: S3 -> BucketName -> BucketPolicy -> Aff Unit
+putBucketPolicy s3 (BucketName name) (BucketPolicy policy) =
+  toAffE
+    $ runFn3 putBucketPolicyImpl s3 name policy
