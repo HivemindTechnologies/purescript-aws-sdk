@@ -17,4 +17,6 @@ You can edit this file as you like.
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]
+, license = "MIT"
+, repository = "https://github.com/HivemindTechnologies/purescript-aws-sdk.git"
 }
