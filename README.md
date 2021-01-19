@@ -15,6 +15,7 @@ Currently we have some functionality for the following modules:
 * SecurityTokenService (STS)
 * DynamoDB
 * SecretsManager
+* KMS
 
 While we do not have any plans to support other features that we currently don't use, we do welcome contributions of missing features. 
 
