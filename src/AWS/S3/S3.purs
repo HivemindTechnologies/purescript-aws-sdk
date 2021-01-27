@@ -1,8 +1,9 @@
 module AWS.S3
   ( S3
-  , BucketName
+  , BucketKey(..)
+  , BucketName(..)
   , BucketPolicyParams
-  , BucketPolicy
+  , BucketPolicy(..)
   , createBucket
   , CreateBucketResponse
   , getObject
@@ -16,6 +17,7 @@ import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Region(..))
 import Control.Promise (Promise, toAffE)
 import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
+import Data.Newtype (class Newtype)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Foreign (Foreign)
@@ -25,7 +27,6 @@ import Justifill.Justifiable (class Justifiable)
 import Node.Buffer (Buffer)
 import Prelude (Unit, ($), class Show, (#), (<#>))
 import Type.Proxy (Proxy(..))
-import Data.Newtype (class Newtype)
 
 foreign import data S3 :: Type
 
@@ -45,6 +46,13 @@ makeClient r = makeClientHelper newS3 props
   props :: DefaultClientProps
   props = justifillVia viaProxy r
 
+newtype BucketName
+  = BucketName String
+
+derive instance ntBucketName :: Newtype BucketName _
+
+derive newtype instance showBucketName :: Show BucketName
+
 type InternalGetObjectParams
   = { "Bucket" :: String
     , "Key" :: String
@@ -59,9 +67,14 @@ type InternalGetObjectResponse
 
 foreign import getObjectImpl :: Fn2 S3 InternalGetObjectParams (Effect (Promise InternalGetObjectResponse))
 
+newtype BucketKey
+  = BucketKey String
+
+derive instance ntBucketKey :: Newtype BucketKey _
+
 type GetObjectParams
-  = { bucket :: String
-    , key :: String
+  = { bucket :: BucketName
+    , key :: BucketKey
     }
 
 type GetObjectResponse
@@ -72,11 +85,11 @@ type GetObjectResponse
     }
 
 getObject :: S3 -> GetObjectParams -> Aff GetObjectResponse
-getObject client input = runFn2 getObjectImpl client params # toAffE <#> convert
+getObject client { bucket: BucketName name, key: BucketKey key } = runFn2 getObjectImpl client params # toAffE <#> convert
   where
   params =
-    { "Bucket": input.bucket
-    , "Key": input.key
+    { "Bucket": name
+    , "Key": key
     }
 
   convert :: InternalGetObjectResponse -> GetObjectResponse
@@ -93,14 +106,7 @@ type InternalBucketConfiguration
   = { "LocationConstraint" :: String }
 
 type CreateBucketResponse
-  = { location :: String }
-
-newtype BucketName
-  = BucketName String
-
-derive instance ntBucketName :: Newtype BucketName _
-
-derive newtype instance showBucketName :: Show BucketName
+  = { location :: Region }
 
 createBucket :: S3 -> BucketName -> Region -> Aff Unit
 createBucket s3 (BucketName name) (Region region) =
