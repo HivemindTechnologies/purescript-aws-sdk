@@ -14,6 +14,7 @@ You can edit this file as you like.
   , "monad-control"
   , "numbers"
   , "simple-json"
+  , "node-buffer"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]
