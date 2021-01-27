@@ -1,4 +1,16 @@
-module AWS.S3 where
+module AWS.S3
+  ( S3
+  , BucketName
+  , BucketPolicyParams
+  , BucketPolicy
+  , createBucket
+  , CreateBucketResponse
+  , getObject
+  , GetObjectParams
+  , GetObjectResponse
+  , makeClient
+  , putBucketPolicy
+  ) where
 
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Region(..))
@@ -10,8 +22,8 @@ import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
-import Prelude (Unit, ($), class Show, (#), (<#>))
 import Node.Buffer (Buffer)
+import Prelude (Unit, ($), class Show, (#), (<#>))
 import Type.Proxy (Proxy(..))
 import Data.Newtype (class Newtype)
 
