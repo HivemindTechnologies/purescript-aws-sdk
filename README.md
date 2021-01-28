@@ -23,7 +23,7 @@ While we do not have any plans to support other features that we currently don't
 
 ## Installation
 
-Add `purescript-aws-sdk` and `justifill` to your `packages.dhall` and `spago.dhall`. For more information on how to add a dependency to your spago project, see the [spago documentation](https://github.com/purescript/spago#add-a-package-to-the-package-set).
+Add `purescript-aws-sdk` to your `packages.dhall` and `spago.dhall`. For more information on how to add a dependency to your spago project, see the [spago documentation](https://github.com/purescript/spago#add-a-package-to-the-package-set).
 
 ❗Don't forget to update the **version** ot the repo according to the available [tags](https://github.com/HivemindTechnologies/purescript-aws-sdk/tags).
 
