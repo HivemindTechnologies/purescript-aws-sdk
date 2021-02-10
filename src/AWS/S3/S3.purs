@@ -85,7 +85,10 @@ type GetObjectResponse
     }
 
 getObject :: S3 -> GetObjectParams -> Aff GetObjectResponse
-getObject client { bucket: BucketName name, key: BucketKey key } = runFn2 getObjectImpl client params # toAffE <#> convert
+getObject client { bucket: BucketName name, key: BucketKey key } =
+  runFn2 getObjectImpl client params
+    # toAffE
+    <#> convert
   where
   params =
     { "Bucket": name
@@ -100,21 +103,28 @@ getObject client { bucket: BucketName name, key: BucketKey key } = runFn2 getObj
     , contentType: internalResponse."ContentType"
     }
 
-foreign import createBucketImpl :: Fn3 S3 String InternalBucketConfiguration (Effect (Promise Unit))
+foreign import createBucketImpl :: Fn3 S3 String InternalBucketConfiguration (Effect (Promise InternalCreateBucketResponse))
 
 type InternalBucketConfiguration
   = { "LocationConstraint" :: String }
 
+type InternalCreateBucketResponse
+  = { "Location" :: String }
+
 type CreateBucketResponse
   = { location :: Region }
 
-createBucket :: S3 -> BucketName -> Region -> Aff Unit
+createBucket :: S3 -> BucketName -> Region -> Aff CreateBucketResponse
 createBucket s3 (BucketName name) (Region region) =
-  toAffE
-    $ runFn3 createBucketImpl s3 name bucketConfig
+  runFn3 createBucketImpl s3 name bucketConfig
+    # toAffE
+    <#> convert
   where
   bucketConfig :: InternalBucketConfiguration
   bucketConfig = { "LocationConstraint": region }
+
+  convert :: InternalCreateBucketResponse -> CreateBucketResponse
+  convert internalResponse = { location: Region internalResponse."Location" }
 
 foreign import putBucketPolicyImpl :: Fn3 S3 String String (Effect (Promise Unit))
 
