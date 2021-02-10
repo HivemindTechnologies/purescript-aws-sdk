@@ -258,9 +258,12 @@ deleteRetentionPolicy cw (LogGroupName name) =
   Promise.toAffE
     $ runFn2 deleteRetentionPolicyImpl cw name
 
-foreign import createExportTaskImpl :: Fn5 CloudWatchLogs String Number String Number (Effect (Promise Unit))
+type CreateExportTaskResponse
+  = { taskId :: String }
 
-createExportTask :: CloudWatchLogs -> Destination -> From -> LogGroupName -> To -> Aff Unit
+foreign import createExportTaskImpl :: Fn5 CloudWatchLogs String Number String Number (Effect (Promise CreateExportTaskResponse))
+
+createExportTask :: CloudWatchLogs -> Destination -> From -> LogGroupName -> To -> Aff CreateExportTaskResponse
 createExportTask cw (Destination destination) (From from) (LogGroupName logGroupName) (To to) =
   Promise.toAffE
     $ runFn5 createExportTaskImpl cw destination from logGroupName to
