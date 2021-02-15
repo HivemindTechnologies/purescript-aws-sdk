@@ -149,10 +149,14 @@ type RetentionSettings
     }
 
 type InternalDescribeLogGroupsResponse
-  = { logGroups :: Array InternalLogGroup }
+  = { logGroups :: Array InternalLogGroup
+    , nextToken :: Nullable String
+    }
 
 type DescribeLogGroupsResponse
-  = { logGroups :: Array LogGroup }
+  = { logGroups :: Array LogGroup
+    , nextToken :: Maybe String
+    }
 
 type InternalLogGroup
   = { arn :: Nullable String
@@ -173,7 +177,9 @@ type LogGroup
     }
 
 type InternalDescribeLogStreamsResponse
-  = { logStreams :: Array InternalLogStream }
+  = { logStreams :: Array InternalLogStream
+    , nextToken :: Nullable String
+    }
 
 type InternalLogStream
   = { creationTime :: Nullable Number
@@ -191,7 +197,25 @@ type LogStream
     }
 
 type DescribeLogStreamsResponse
-  = { logStreams :: Array LogStream }
+  = { logStreams :: Array LogStream
+    , nextToken :: Maybe String
+    }
+
+type InternalDescribeLogStreamsParams
+  = { logGroupName :: String
+    , nextToken :: Nullable String
+    }
+
+type DescribeLogStreamsParams
+  = { logGroupName :: String
+    , nextToken :: Maybe String
+    }
+
+type InternalDescribeLogGroupsParams
+  = { nextToken :: Nullable String }
+
+type DescribeLogGroupsParams
+  = { nextToken :: Maybe String }
 
 type ExportTaskParams
   = { destination :: Destination
@@ -200,13 +224,16 @@ type ExportTaskParams
     , to :: To
     }
 
-foreign import describeLogGroupsImpl :: CloudWatchLogs -> (Effect (Promise InternalDescribeLogGroupsResponse))
+foreign import describeLogGroupsImpl :: Fn2 CloudWatchLogs InternalDescribeLogGroupsParams (Effect (Promise InternalDescribeLogGroupsResponse))
 
-describeLogGroups :: CloudWatchLogs -> Aff DescribeLogGroupsResponse
-describeLogGroups cloudWatchLogs = liftEffect curried >>= Promise.toAff <#> toExternal
+describeLogGroups ::
+  CloudWatchLogs ->
+  DescribeLogGroupsParams ->
+  Aff DescribeLogGroupsResponse
+describeLogGroups cloudWatchLogs params = liftEffect (curried cloudWatchLogs internalParams) >>= Promise.toAff <#> toExternal
   where
   toExternal :: InternalDescribeLogGroupsResponse -> DescribeLogGroupsResponse
-  toExternal { logGroups: internal } = { logGroups: internal <#> toExternalLogGroup }
+  toExternal { logGroups: internal, nextToken } = { logGroups: internal <#> toExternalLogGroup, nextToken: Nullable.toMaybe nextToken }
 
   toExternalLogGroup :: InternalLogGroup -> LogGroup
   toExternalLogGroup internal =
@@ -216,16 +243,21 @@ describeLogGroups cloudWatchLogs = liftEffect curried >>= Promise.toAff <#> toEx
     , storedBytes: Nullable.toMaybe internal.storedBytes
     }
 
-  curried :: Effect (Promise InternalDescribeLogGroupsResponse)
-  curried = describeLogGroupsImpl cloudWatchLogs
+  internalParams = { nextToken: Nullable.toNullable params.nextToken }
 
-foreign import describeLogStreamsImpl :: Fn2 CloudWatchLogs String (Effect (Promise InternalDescribeLogStreamsResponse))
+  curried :: CloudWatchLogs -> InternalDescribeLogGroupsParams -> Effect (Promise InternalDescribeLogGroupsResponse)
+  curried = runFn2 describeLogGroupsImpl
 
-describeLogStreams :: CloudWatchLogs -> LogGroupName -> Aff (DescribeLogStreamsResponse)
-describeLogStreams cloudWatchLogs (LogGroupName name) = liftEffect (curried cloudWatchLogs name) >>= Promise.toAff <#> toExternal
+foreign import describeLogStreamsImpl :: Fn2 CloudWatchLogs InternalDescribeLogStreamsParams (Effect (Promise InternalDescribeLogStreamsResponse))
+
+describeLogStreams ::
+  CloudWatchLogs ->
+  DescribeLogStreamsParams ->
+  Aff DescribeLogStreamsResponse
+describeLogStreams cloudWatchLogs params = liftEffect (curried cloudWatchLogs internalParams) >>= Promise.toAff <#> toExternal
   where
   toExternal :: InternalDescribeLogStreamsResponse -> DescribeLogStreamsResponse
-  toExternal { logStreams: internal } = { logStreams: internal <#> toExternalLogStream }
+  toExternal { logStreams: internal, nextToken } = { logStreams: internal <#> toExternalLogStream, nextToken: Nullable.toMaybe nextToken }
 
   toExternalLogStream :: InternalLogStream -> LogStream
   toExternalLogStream internal =
@@ -235,7 +267,12 @@ describeLogStreams cloudWatchLogs (LogGroupName name) = liftEffect (curried clou
     , lastIngestionTime: Nullable.toMaybe internal.lastIngestionTime
     }
 
-  curried :: CloudWatchLogs -> String -> Effect (Promise InternalDescribeLogStreamsResponse)
+  internalParams =
+    { logGroupName: params.logGroupName
+    , nextToken: Nullable.toNullable params.nextToken
+    }
+
+  curried :: CloudWatchLogs -> InternalDescribeLogStreamsParams -> Effect (Promise InternalDescribeLogStreamsResponse)
   curried = (runFn2 describeLogStreamsImpl)
 
 foreign import putRetentionPolicyImpl :: Fn3 CloudWatchLogs String (Nullable Int) (Effect (Promise Unit))
