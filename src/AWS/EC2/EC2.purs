@@ -3,9 +3,9 @@ module AWS.EC2 where
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Instance, InstanceId(..), InstanceType(..))
-import Control.Promise (Promise)
+import Control.Promise (Promise, toAffE)
 import Control.Promise as Promise
-import Data.Function.Uncurried (Fn1)
+import Data.Function.Uncurried (Fn1, Fn2, runFn2)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -58,3 +58,94 @@ describeInstances ec2 = map toExternal $ liftEffect curried >>= Promise.toAff
 
   curried :: Effect (Promise InternalEC2Response)
   curried = describeInstancesImpl ec2
+
+data ResourceTypeName
+  = CustomerGateway
+  | DedicatedHost
+  | DhcpOptions
+  | ElasticIp
+  | Fleet
+  | FpgaImage
+  | HostReservation
+  | Image
+  | Instance
+  | InternetGateway
+  | KeyPair
+  | LaunchTemplate
+  | Natgateway
+  | NetworkAcl
+  | NetworkInterface
+  | PlacementGroup
+  | ReservedInstances
+  | RouteTable
+  | SecurityGroup
+  | Snapshot
+  | SpotInstancesRequest
+  | Subnet
+  | Volume
+  | Vpc
+  | VpcEndpoint
+  | VpcEndpointService
+  | VpcPeeringConnection
+  | VpnConnection
+  | VpnGateway
+
+data FilterName
+  = Key
+  | ResourceId
+  | ResourceType ResourceTypeName
+  | Tag String String
+  | Value
+
+type InternalFilter
+  = { "Name" :: FilterName, "Values" :: Array String }
+
+type Filter
+  = { name :: FilterName, values :: Array String }
+
+toInternalFilter :: Filter -> InternalFilter
+toInternalFilter internalFilter = { "Name": internalFilter.name, "Values": internalFilter.values }
+
+type InternalTag
+  = { "ResourceType" :: String
+    , "ResourceId" :: String
+    , "Value" :: String
+    , "Key" :: String
+    }
+
+type InternalDescribeTagsResponse
+  = { "Tags" :: Array InternalTag
+    }
+
+type Tag
+  = { resourceType :: String
+    , resourceId :: String
+    , value :: String
+    , key :: String
+    }
+
+type DescribeTagsResponse
+  = { tags :: Array Tag
+    }
+
+toTag :: InternalTag -> Tag
+toTag internalTag =
+  { resourceType: internalTag."ResourceType"
+  , resourceId: internalTag."ResourceId"
+  , value: internalTag."Value"
+  , key: internalTag."Key"
+  }
+
+foreign import describeTagsImpl :: Fn2 EC2 (Array InternalFilter) (Effect (Promise InternalDescribeTagsResponse))
+
+describeTags :: EC2 -> Array Filter -> Aff DescribeTagsResponse
+describeTags ec2 filters =
+  runFn2 describeTagsImpl ec2 internalFilters
+    # toAffE
+    <#> toResponse
+  where
+  internalFilters :: Array InternalFilter
+  internalFilters = filters <#> toInternalFilter
+
+  toResponse :: InternalDescribeTagsResponse -> DescribeTagsResponse
+  toResponse internalRspse = { tags: internalRspse."Tags" <#> toTag }
