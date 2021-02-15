@@ -304,3 +304,11 @@ createExportTask :: CloudWatchLogs -> Destination -> From -> LogGroupName -> To 
 createExportTask cw (Destination destination) (From from) (LogGroupName logGroupName) (To to) =
   Promise.toAffE
     $ runFn5 createExportTaskImpl cw destination from logGroupName to
+
+foreign import listTagsLogGroupImpl :: Fn2 CloudWatchLogs String (Effect (Promise ListTagsLogsGroupResponse))
+
+type ListTagsLogsGroupResponse
+  = { tags :: String }
+
+listTagsLogGroup :: CloudWatchLogs -> LogGroupName -> Aff ListTagsLogsGroupResponse
+listTagsLogGroup cw (LogGroupName name) = Promise.toAffE $ runFn2 listTagsLogGroupImpl cw name
