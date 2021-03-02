@@ -6,7 +6,7 @@ import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, InstanceId)
 import Control.Promise (Promise)
 import Control.Promise as Promise
-import Data.Argonaut (JsonDecodeError, decodeJson, parseJson)
+import Data.Argonaut (Json, JsonDecodeError, decodeJson, parseJson)
 import Data.Bifunctor (lmap)
 import Data.DateTime (DateTime)
 import Data.Either (Either)
@@ -23,7 +23,7 @@ import Type.Proxy (Proxy(..))
 
 foreign import data CloudWatch :: Type
 
-foreign import newCloudWatch :: forall p. p -> (Effect CloudWatch)
+foreign import newCloudWatch :: Json -> (Effect CloudWatch)
 
 makeClient ::
   forall r via.
