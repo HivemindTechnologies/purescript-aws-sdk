@@ -1,15 +1,16 @@
 module AWS.EC2 where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Instance, InstanceId(..), InstanceType(..))
 import Control.Promise (Promise)
 import Control.Promise as Promise
+import Data.Argonaut (Json)
 import Data.Function.Uncurried (Fn1)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
-import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
@@ -17,7 +18,7 @@ import Type.Proxy (Proxy(..))
 
 foreign import data EC2 :: Type
 
-foreign import newEC2 :: Foreign -> (Effect EC2)
+foreign import newEC2 :: Json -> (Effect EC2)
 
 makeClient ::
   forall r via.

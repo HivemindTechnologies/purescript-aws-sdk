@@ -1,20 +1,18 @@
-{-
-Welcome to a Spago project!
-You can edit this file as you like.
--}
-{ name = "purescript-aws-sdk"
+{ name = "purescript-aws-sdk-basic"
 , dependencies =
   [ "aff-promise"
+  , "argonaut"
   , "console"
   , "datetime"
   , "effect"
+  , "foreign"
   , "formatters"
   , "js-date"
   , "justifill"
   , "monad-control"
-  , "numbers"
-  , "simple-json"
   , "node-buffer"
+  , "nullable"
+  , "numbers"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]

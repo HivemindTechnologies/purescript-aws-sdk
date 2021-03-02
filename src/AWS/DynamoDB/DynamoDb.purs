@@ -1,11 +1,13 @@
 module AWS.DynamoDb where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (catchAwsError)
 import Control.Promise (Promise)
 import Control.Promise as Promise
+import Data.Argonaut (Json)
 import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Maybe (Maybe(..))
@@ -14,7 +16,6 @@ import Data.Nullable as Nullable
 import Effect (Effect)
 import Effect.Aff (Aff, Error, catchError)
 import Effect.Class (liftEffect)
-import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
@@ -22,7 +23,7 @@ import Type.Proxy (Proxy(..))
 
 foreign import data DynamoDbClient :: Type
 
-foreign import newDynamoDbClient :: Foreign -> (Effect DynamoDbClient)
+foreign import newDynamoDbClient :: Json -> (Effect DynamoDbClient)
 
 makeClient ::
   forall r via.

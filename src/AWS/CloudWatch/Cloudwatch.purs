@@ -1,31 +1,29 @@
 module AWS.CloudWatch where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, InstanceId)
 import Control.Promise (Promise)
 import Control.Promise as Promise
+import Data.Argonaut (JsonDecodeError, decodeJson, parseJson)
 import Data.Bifunctor (lmap)
 import Data.DateTime (DateTime)
 import Data.Either (Either)
-import Data.Foldable (fold)
 import Data.Function.Uncurried (Fn2, runFn2)
 import Data.JSDate (JSDate, fromDateTime)
-import Data.List.Types (NonEmptyList)
 import Data.Newtype (unwrap)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
-import Foreign (Foreign, ForeignError)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
-import Simple.JSON (readJSON)
 import Type.Proxy (Proxy(..))
 
 foreign import data CloudWatch :: Type
 
-foreign import newCloudWatch :: Foreign -> (Effect CloudWatch)
+foreign import newCloudWatch :: forall p. p -> (Effect CloudWatch)
 
 makeClient ::
   forall r via.
@@ -70,11 +68,11 @@ foreign import getMetricStatisticsImpl :: Fn2 CloudWatch InternalGetMetricsStati
 getMetricStatistics :: forall a. CloudWatch -> { start :: DateTime, end :: DateTime | a } -> InstanceId -> Aff (Either String InternalGetMetricStatisticsOutput)
 getMetricStatistics cw range instanceId = liftEffect curried >>= Promise.toAff <#> parse
   where
-  handleError :: NonEmptyList ForeignError -> String
-  handleError = map show >>> fold
+  handleError :: JsonDecodeError -> String
+  handleError = show
 
   parse :: String -> Either String InternalGetMetricStatisticsOutput
-  parse = readJSON >>> lmap handleError
+  parse = (parseJson >=> decodeJson) >>> lmap handleError
 
   curried :: Effect (Promise String)
   curried =

@@ -14,16 +14,17 @@ module AWS.KMS
   ) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (Arn(..), DefaultClientProps)
 import AWS.Core.Util (raiseEither)
 import Control.Promise (Promise, toAffE)
+import Data.Argonaut (Json)
 import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Newtype (un)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
@@ -31,7 +32,7 @@ import Type.Proxy (Proxy(..))
 
 foreign import data KMS :: Type
 
-foreign import newKMS :: Foreign -> Effect KMS
+foreign import newKMS :: Json -> Effect KMS
 
 makeClient ::
   forall r via.
