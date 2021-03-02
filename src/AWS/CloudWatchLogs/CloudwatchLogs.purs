@@ -9,6 +9,7 @@ import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Argonaut (Json)
 import Data.Argonaut.Encode (class EncodeJson)
+import Data.Argonaut.Decode (class DecodeJson)
 import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.Function.Uncurried (Fn2, Fn3, Fn5, runFn2, runFn3, runFn5)
 import Data.Maybe (Maybe(..))
@@ -58,6 +59,9 @@ derive instance ntLogGroupName :: Newtype LogGroupName _
 
 derive newtype instance showLogGroupName :: Show LogGroupName
 
+derive newtype instance encodeLogGroupName :: EncodeJson LogGroupName
+
+derive newtype instance decodeLogGroupName :: DecodeJson LogGroupName
 
 data RetentionInDays
   = Retention1Day
