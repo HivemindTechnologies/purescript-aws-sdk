@@ -83,7 +83,7 @@ data RetentionInDays
   | Retention120Months
   | NoRetention
 
-instance writeForeignRetentionInDays :: EncodeJson RetentionInDays where
+instance encodeRetentionInDays :: EncodeJson RetentionInDays where
   encodeJson Retention1Day = encodeString "1"
   encodeJson Retention3Days = encodeString "3"
   encodeJson Retention5Days = encodeString "5"
