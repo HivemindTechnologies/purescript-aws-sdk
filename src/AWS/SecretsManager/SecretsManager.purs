@@ -7,9 +7,11 @@ module AWS.SecretsManager
   ) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Promise (Promise, toAffE)
+import Data.Argonaut (Json)
 import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Newtype (class Newtype)
 import Effect (Effect)
@@ -22,7 +24,7 @@ import Type.Proxy (Proxy(..))
 
 foreign import data SecretsManager :: Type
 
-foreign import newSecretsManager :: Foreign -> Effect SecretsManager
+foreign import newSecretsManager :: Json -> Effect SecretsManager
 
 makeClient ::
   forall r via.

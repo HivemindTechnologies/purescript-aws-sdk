@@ -1,11 +1,15 @@
 module AWS.CloudWatchLogs where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Monad.Error.Class (throwError)
 import Control.Promise (Promise)
 import Control.Promise as Promise
+import Data.Argonaut (Json)
+import Data.Argonaut.Encode (class EncodeJson)
+import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.Function.Uncurried (Fn2, Fn3, Fn5, runFn2, runFn3, runFn5)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
@@ -15,16 +19,14 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
-import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
-import Simple.JSON (class WriteForeign, class ReadForeign, writeImpl)
 import Type.Proxy (Proxy(..))
 
 foreign import data CloudWatchLogs :: Type
 
-foreign import newCloudWatchLogs :: Foreign -> (Effect CloudWatchLogs)
+foreign import newCloudWatchLogs :: Json -> (Effect CloudWatchLogs)
 
 makeClient ::
   forall r via.
@@ -56,9 +58,6 @@ derive instance ntLogGroupName :: Newtype LogGroupName _
 
 derive newtype instance showLogGroupName :: Show LogGroupName
 
-derive newtype instance wfLogGroupName :: WriteForeign LogGroupName
-
-derive newtype instance rfLogGroupName :: ReadForeign LogGroupName
 
 data RetentionInDays
   = Retention1Day
@@ -80,25 +79,25 @@ data RetentionInDays
   | Retention120Months
   | NoRetention
 
-instance writeForeignRetentionInDays :: WriteForeign RetentionInDays where
-  writeImpl Retention1Day = writeImpl "1"
-  writeImpl Retention3Days = writeImpl "3"
-  writeImpl Retention5Days = writeImpl "5"
-  writeImpl Retention1Week = writeImpl "7"
-  writeImpl Retention2Weeks = writeImpl "14"
-  writeImpl Retention1Month = writeImpl "30"
-  writeImpl Retention2Months = writeImpl "60"
-  writeImpl Retention3Months = writeImpl "90"
-  writeImpl Retention4Months = writeImpl "120"
-  writeImpl Retention5Months = writeImpl "150"
-  writeImpl Retention6Months = writeImpl "180"
-  writeImpl Retention12Months = writeImpl "365"
-  writeImpl Retention13Months = writeImpl "400"
-  writeImpl Retention18Months = writeImpl "545"
-  writeImpl Retention24Months = writeImpl "731"
-  writeImpl Retention60Months = writeImpl "1827"
-  writeImpl Retention120Months = writeImpl "3653"
-  writeImpl NoRetention = writeImpl "no retention"
+instance writeForeignRetentionInDays :: EncodeJson RetentionInDays where
+  encodeJson Retention1Day = encodeString "1"
+  encodeJson Retention3Days = encodeString "3"
+  encodeJson Retention5Days = encodeString "5"
+  encodeJson Retention1Week = encodeString "7"
+  encodeJson Retention2Weeks = encodeString "14"
+  encodeJson Retention1Month = encodeString "30"
+  encodeJson Retention2Months = encodeString "60"
+  encodeJson Retention3Months = encodeString "90"
+  encodeJson Retention4Months = encodeString "120"
+  encodeJson Retention5Months = encodeString "150"
+  encodeJson Retention6Months = encodeString "180"
+  encodeJson Retention12Months = encodeString "365"
+  encodeJson Retention13Months = encodeString "400"
+  encodeJson Retention18Months = encodeString "545"
+  encodeJson Retention24Months = encodeString "731"
+  encodeJson Retention60Months = encodeString "1827"
+  encodeJson Retention120Months = encodeString "3653"
+  encodeJson NoRetention = encodeString "no retention"
 
 retentionToInt :: RetentionInDays -> Maybe Int
 retentionToInt retention = case retention of

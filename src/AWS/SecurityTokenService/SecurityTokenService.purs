@@ -1,10 +1,12 @@
 module AWS.SecurityTokenService (STS, StsRegionalEndpoint(..), RoleSessionName(..), STSProps, STSPropsR, makeClient, makeRegionalClient, assumeRole) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (AccessKeyId(..), Arn(..), BasicClientPropsR, ExternalId(..), SecretAccessKey(..), SessionToken(..), DefaultClientProps)
 import Control.Promise (Promise)
 import Control.Promise as Promise
+import Data.Argonaut (Json)
 import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un, class Newtype)
@@ -21,20 +23,21 @@ import Justifill.Justifiable (class Justifiable, class JustifiableFields)
 import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
 import Record (merge)
-import Simple.JSON (class WriteForeign, writeImpl)
 import Type.Proxy (Proxy(..))
+import Data.Argonaut.Encode (class EncodeJson)
+import Data.Argonaut.Encode.Encoders (encodeString)
 
 foreign import data STS :: Type
 
-foreign import newSTS :: Foreign -> Effect STS
+foreign import newSTS :: Json -> Effect STS
 
 data StsRegionalEndpoint
   = Regional
   | Legacy
 
-instance writeForeignStsRegionalEndpoint :: WriteForeign StsRegionalEndpoint where
-  writeImpl Regional = writeImpl "regional"
-  writeImpl Legacy = writeImpl "legacy"
+instance encodeStsRegionalEndpoint :: EncodeJson StsRegionalEndpoint where
+  encodeJson Regional = encodeString "regional"
+  encodeJson Legacy = encodeString "legacy"
 
 newtype RoleSessionName
   = RoleSessionName String

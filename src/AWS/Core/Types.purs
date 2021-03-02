@@ -2,37 +2,36 @@ module AWS.Core.Types where
 
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
-import Foreign (Foreign, tagOf)
 import Prelude (class Show)
-import Simple.JSON (class WriteForeign)
+import Data.Argonaut.Encode (class EncodeJson)
 
 newtype AccessKeyId
   = AccessKeyId String
 
 derive instance ntAccessKeyId :: Newtype AccessKeyId _
 
-derive newtype instance wfAccessKeyId :: WriteForeign AccessKeyId
+derive newtype instance encodeAccessKeyId :: EncodeJson AccessKeyId
 
 newtype Region
   = Region String
 
 derive instance ntRegion :: Newtype Region _
 
-derive newtype instance wfRegion :: WriteForeign Region
+derive newtype instance encodeRegion :: EncodeJson Region
 
 newtype SecretAccessKey
   = SecretAccessKey String
 
 derive instance ntSecretAccessKey :: Newtype SecretAccessKey _
 
-derive newtype instance wfSecretAccessKey :: WriteForeign SecretAccessKey
+derive newtype instance encodeSecretAccessKey :: EncodeJson SecretAccessKey
 
 newtype SessionToken
   = SessionToken String
 
 derive instance ntSessionToken :: Newtype SessionToken _
 
-derive newtype instance wfSessionToken :: WriteForeign SessionToken
+derive newtype instance encodeSessionToken :: EncodeJson SessionToken
 
 newtype Arn
   = Arn String
@@ -61,25 +60,23 @@ derive instance ntInstanceType :: Newtype InstanceType _
 
 derive newtype instance showInstanceType :: Show InstanceType
 
-newtype Credentials
-  = Credentials Foreign
+type Credentials = {
+      accessKeyId :: Maybe AccessKeyId
+    , secretAccessKey :: Maybe SecretAccessKey
+    , sessionToken :: Maybe SessionToken
+}
 
-derive instance ntCredentials :: Newtype Credentials _
-
-instance showCredentials :: Show Credentials where
-  show (Credentials credentials) = tagOf credentials
-
-instance writeCreds :: WriteForeign Credentials where
-  writeImpl (Credentials creds) = creds
 
 type BasicClientPropsR r
   = ( accessKeyId :: Maybe AccessKeyId
     , secretAccessKey :: Maybe SecretAccessKey
     , region :: Maybe Region
     , sessionToken :: Maybe SessionToken
-    , credentials :: (Maybe Credentials)
+    , credentials :: Maybe Credentials
     | r
     )
+
+type BasicClientProps r = Record (BasicClientPropsR r)
 
 type DefaultClientPropsR
   = BasicClientPropsR ()

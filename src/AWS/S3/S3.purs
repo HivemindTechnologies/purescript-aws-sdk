@@ -16,11 +16,11 @@ module AWS.S3
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Region(..))
 import Control.Promise (Promise, toAffE)
+import Data.Argonaut (Json)
 import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
 import Data.Newtype (class Newtype)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
@@ -30,7 +30,7 @@ import Type.Proxy (Proxy(..))
 
 foreign import data S3 :: Type
 
-foreign import newS3 :: Foreign -> Effect S3
+foreign import newS3 :: Json -> Effect S3
 
 makeClient ::
   forall r via.

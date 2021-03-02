@@ -1,29 +1,30 @@
 module AWS.CostExplorer where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (raiseEither, toIso8601Date, joinNullArr)
+import AWS.CostExplorer.Types (CostAndUsage, DateInterval, Group, GroupDefinition, MetricValue, NextPageToken(..), ResultByTime, Key(..), Amount(..), Metric)
 import Control.Promise (Promise)
 import Control.Promise as Promise
+import Data.Argonaut (Json)
 import Data.DateTime (DateTime)
+import Data.Either (hush, Either)
+import Data.Formatter.DateTime (unformatDateTime)
 import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe, null)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Type.Proxy (Proxy(..))
-import Data.Formatter.DateTime (unformatDateTime)
-import Data.Either (hush, Either)
-import AWS.CostExplorer.Types (CostAndUsage, DateInterval, Group, GroupDefinition, MetricValue, NextPageToken(..), ResultByTime, Key(..), Amount(..), Metric)
 
 foreign import data CE :: Type
 
-foreign import newCE :: Foreign -> (Effect CE)
+foreign import newCE :: Json -> (Effect CE)
 
 makeClient ::
   forall r via.

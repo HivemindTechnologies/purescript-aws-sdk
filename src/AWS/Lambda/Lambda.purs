@@ -1,17 +1,17 @@
 module AWS.Lambda where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (Arn(..), DefaultClientProps)
 import Control.Promise (Promise, toAffE)
+import Data.Argonaut (class EncodeJson, Json, encodeJson, stringify)
 import Data.Function.Uncurried (Fn2, runFn2)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Foreign (Foreign)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
-import Simple.JSON (class WriteForeign, writeJSON)
 import Type.Proxy (Proxy(..))
 
 type InternalLambdaParams
@@ -21,7 +21,7 @@ type InternalLambdaParams
 
 foreign import data Lambda :: Type
 
-foreign import newLambda :: Foreign -> (Effect Lambda)
+foreign import newLambda :: Json -> (Effect Lambda)
 
 makeClient ::
   forall r via.
@@ -39,10 +39,10 @@ makeClient r = makeClientHelper newLambda props
 
 foreign import invokeImpl :: forall output. Fn2 Lambda InternalLambdaParams (Effect (Promise output))
 
-invoke :: forall input output. WriteForeign input => Lambda -> Arn -> input -> Aff output
+invoke :: forall input output. EncodeJson input => Lambda -> Arn -> input -> Aff output
 invoke client (Arn arn) input = runFn2 invokeImpl client params # toAffE
   where
   params =
     { "FunctionName": arn
-    , "Payload": writeJSON input
+    , "Payload": stringify (encodeJson input)
     }
