@@ -98,12 +98,15 @@ data FilterName
   | Value
 
 type InternalFilter
-  = { "Name" :: FilterName, "Values" :: Array String }
+  -- = { "Name" :: FilterName, "Values" :: Array String }
+  = { "Name" :: String, "Values" :: Array String }
 
 type Filter
-  = { name :: FilterName, values :: Array String }
+  -- = { name :: FilterName, values :: Array String }
+  = { name :: String, values :: Array String }
 
 toInternalFilter :: Filter -> InternalFilter
+-- toInternalFilter internalFilter = { "Name": internalFilter.name, "Values": internalFilter.values }
 toInternalFilter internalFilter = { "Name": internalFilter.name, "Values": internalFilter.values }
 
 type InternalTag
