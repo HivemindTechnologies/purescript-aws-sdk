@@ -66,10 +66,20 @@ type Credentials
     , sessionToken :: Maybe SessionToken
     }
 
+newtype Endpoint
+  = Endpoint String
+
+derive instance ntEndpoint :: Newtype Endpoint _
+
+derive newtype instance showEndpoint :: Show Endpoint
+
+derive newtype instance wfEndpoint :: WriteForeign Endpoint
+
 type BasicClientPropsR r
   = ( accessKeyId :: Maybe AccessKeyId
     , secretAccessKey :: Maybe SecretAccessKey
     , region :: Maybe Region
+    , endpoint :: Maybe Endpoint
     , sessionToken :: Maybe SessionToken
     , credentials :: Maybe Credentials
     | r
