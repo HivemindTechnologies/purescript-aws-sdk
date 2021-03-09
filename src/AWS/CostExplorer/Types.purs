@@ -29,7 +29,6 @@ derive newtype instance encodeKey :: EncodeJson Key
 
 derive newtype instance decodeKey :: DecodeJson Key
 
-
 newtype Amount
   = Amount String
 

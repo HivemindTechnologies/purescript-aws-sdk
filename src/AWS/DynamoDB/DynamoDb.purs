@@ -1,7 +1,6 @@
 module AWS.DynamoDb where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (catchAwsError)

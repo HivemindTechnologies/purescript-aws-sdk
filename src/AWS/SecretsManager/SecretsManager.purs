@@ -7,7 +7,6 @@ module AWS.SecretsManager
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Promise (Promise, toAffE)

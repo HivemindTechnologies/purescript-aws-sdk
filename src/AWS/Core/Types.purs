@@ -60,12 +60,11 @@ derive instance ntInstanceType :: Newtype InstanceType _
 
 derive newtype instance showInstanceType :: Show InstanceType
 
-type Credentials = {
-      accessKeyId :: Maybe AccessKeyId
+type Credentials
+  = { accessKeyId :: Maybe AccessKeyId
     , secretAccessKey :: Maybe SecretAccessKey
     , sessionToken :: Maybe SessionToken
-}
-
+    }
 
 type BasicClientPropsR r
   = ( accessKeyId :: Maybe AccessKeyId
@@ -76,7 +75,8 @@ type BasicClientPropsR r
     | r
     )
 
-type BasicClientProps r = Record (BasicClientPropsR r)
+type BasicClientProps r
+  = Record (BasicClientPropsR r)
 
 type DefaultClientPropsR
   = BasicClientPropsR ()

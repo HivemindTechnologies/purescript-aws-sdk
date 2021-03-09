@@ -1,7 +1,6 @@
 module AWS.CloudWatchLogs where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Monad.Error.Class (throwError)
