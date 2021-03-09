@@ -14,7 +14,6 @@ module AWS.KMS
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (Arn(..), DefaultClientProps)
 import AWS.Core.Util (raiseEither)

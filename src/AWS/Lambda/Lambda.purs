@@ -1,7 +1,6 @@
 module AWS.Lambda where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (Arn(..), DefaultClientProps)
 import Control.Promise (Promise, toAffE)

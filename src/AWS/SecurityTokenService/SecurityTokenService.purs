@@ -1,7 +1,6 @@
 module AWS.SecurityTokenService (STS, StsRegionalEndpoint(..), RoleSessionName(..), STSProps, STSPropsR, makeClient, makeRegionalClient, assumeRole) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (AccessKeyId(..), Arn(..), BasicClientPropsR, ExternalId(..), SecretAccessKey(..), SessionToken(..), DefaultClientProps)
 import Control.Promise (Promise)
