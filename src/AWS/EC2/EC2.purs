@@ -1,4 +1,4 @@
-module AWS.EC2 where
+module AWS.EC2 (makeClient, describeInstances) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)

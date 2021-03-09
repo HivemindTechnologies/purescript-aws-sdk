@@ -1,14 +1,34 @@
-module AWS.CloudWatchLogs where
+module AWS.CloudWatchLogs
+  ( CloudWatchLogs
+  , DescribeLogGroupsResponse
+  , LogGroup
+  , RetentionSettings
+  , toRetention
+  , LogGroupName(..)
+  , ExportTaskParams
+  , Destination
+  , From
+  , To
+  , NoRetention
+  , deleteRetentionPolicy
+  , putRetentionPolicy
+  , retentionToInt
+  , describeLogGroups
+  , createExportTask
+  , makeClient
+  , RetentionInDays(..)
+  ) where
 
 import Prelude
+import AWS.CloudWatch (makeClient)
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Monad.Error.Class (throwError)
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Argonaut (Json)
-import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Decode (class DecodeJson)
+import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.Function.Uncurried (Fn2, Fn3, Fn5, runFn2, runFn3, runFn5)
 import Data.Maybe (Maybe(..))
