@@ -1,4 +1,4 @@
-module AWS.DynamoDb where
+module AWS.DynamoDb (makeClient, putItem, GetItemOutput, getItem) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)

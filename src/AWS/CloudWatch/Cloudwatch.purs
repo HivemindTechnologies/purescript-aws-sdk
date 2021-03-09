@@ -1,4 +1,9 @@
-module AWS.CloudWatch where
+module AWS.CloudWatch
+  ( makeClient
+  , InternalGetMetricStatisticsOutput
+  , InternalMetricDatapoint
+  , getMetricStatistics
+  ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)
