@@ -21,9 +21,6 @@ jobs:
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      - name: "build"
-        run: "npm install & npx spago build"
     
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
