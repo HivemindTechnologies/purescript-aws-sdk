@@ -1,5 +1,6 @@
 module AWS.CloudWatch
-  ( makeClient
+  ( CloudWatch
+  , makeClient
   , InternalGetMetricStatisticsOutput
   , InternalMetricDatapoint
   , getMetricStatistics

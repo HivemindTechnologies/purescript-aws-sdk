@@ -1,4 +1,8 @@
-module AWS.CostExplorer (makeClient, getCostAndUsage) where
+module AWS.CostExplorer
+  ( CE
+  , makeClient
+  , getCostAndUsage
+  ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)

@@ -1,7 +1,10 @@
-module AWS.Lambda (makeClient, invoke) where
+module AWS.Lambda
+  ( Lambda
+  , makeClient
+  , invoke
+  ) where
 
 import Prelude
-import AWS.CloudWatch (makeClient)
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (Arn(..), DefaultClientProps)
 import Control.Promise (Promise, toAffE)

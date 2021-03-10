@@ -9,7 +9,7 @@ module AWS.CloudWatchLogs
   , Destination
   , From
   , To
-  , NoRetention
+  , RetentionInDays(..)
   , deleteRetentionPolicy
   , putRetentionPolicy
   , retentionToInt
