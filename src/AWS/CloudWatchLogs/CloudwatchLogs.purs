@@ -21,7 +21,7 @@ module AWS.CloudWatchLogs
 
 import Prelude
 import AWS.CloudWatch (makeClient)
-import AWS.Core.Client (makeClientHelper)
+import AWS.Core.Client (makeClientHelper)asda
 import AWS.Core.Types (DefaultClientProps)
 import Control.Monad.Error.Class (throwError)
 import Control.Promise (Promise)
