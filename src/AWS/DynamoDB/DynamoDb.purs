@@ -1,4 +1,10 @@
-module AWS.DynamoDb (makeClient, putItem, GetItemOutput, getItem) where
+module AWS.DynamoDb
+  ( DynamoDbClient
+  , makeClient
+  , putItem
+  , GetItemOutput
+  , getItem
+  ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)

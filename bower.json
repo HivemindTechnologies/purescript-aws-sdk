@@ -15,15 +15,17 @@
     ],
     "dependencies": {
         "purescript-aff-promise": "^v2.1.0",
-        "purescript-console": "^v4.4.0",
-        "purescript-datetime": "^v4.1.1",
-        "purescript-effect": "^v2.0.1",
-        "purescript-formatters": "^v4.0.1",
-        "purescript-js-date": "^v6.0.0",
-        "purescript-justifill": "i-am-the-slime/purescript-justifill#^v0.1.0",
+        "purescript-argonaut": "^v8.0.0",
+        "purescript-console": "^v5.0.0",
+        "purescript-datetime": "^v5.0.0",
+        "purescript-effect": "^v3.0.0",
+        "purescript-foreign": "^v6.0.0",
+        "purescript-formatters": "^v5.0.0",
+        "purescript-js-date": "^v7.0.0",
         "purescript-monad-control": "^v5.0.0",
-        "purescript-node-buffer": "^v6.0.0",
-        "purescript-numbers": "^v7.0.0",
-        "purescript-simple-json": "^v7.0.0"
+        "purescript-node-buffer": "^v7.0.0",
+        "purescript-nullable": "^v5.0.0",
+        "purescript-justifill": "i-am-the-slime/purescript-justifill#^v0.2.0",
+        "purescript-numbers": "^v8.0.0"
     }
 }
