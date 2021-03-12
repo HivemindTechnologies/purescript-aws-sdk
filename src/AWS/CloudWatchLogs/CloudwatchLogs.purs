@@ -9,7 +9,6 @@ module AWS.CloudWatchLogs
   , Destination
   , From
   , To
-  , RetentionInDays(..)
   , deleteRetentionPolicy
   , putRetentionPolicy
   , retentionToInt
@@ -20,7 +19,6 @@ module AWS.CloudWatchLogs
   ) where
 
 import Prelude
-import AWS.CloudWatch (makeClient)
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import Control.Monad.Error.Class (throwError)
