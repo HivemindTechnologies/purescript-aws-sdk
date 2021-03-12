@@ -73,7 +73,7 @@ derive instance ntEndpoint :: Newtype Endpoint _
 
 derive newtype instance showEndpoint :: Show Endpoint
 
-derive newtype instance wfEndpoint :: WriteForeign Endpoint
+derive newtype instance encodeEndpoint :: EncodeJson Endpoint
 
 type BasicClientPropsR r
   = ( accessKeyId :: Maybe AccessKeyId
