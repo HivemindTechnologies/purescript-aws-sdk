@@ -6,9 +6,9 @@ module AWS.CloudWatchLogs
   , toRetention
   , LogGroupName(..)
   , ExportTaskParams
-  , Destination
-  , From
-  , To
+  , Destination(..)
+  , From(..)
+  , To(..)
   , deleteRetentionPolicy
   , putRetentionPolicy
   , retentionToInt
