@@ -8,6 +8,10 @@ exports.getObjectImpl = (s3, params) => () => s3
     .getObject(params)
     .promise()
 
+exports.getSignedUrlImpl = (s3, operation, params) => () => s3
+    .getSignedUrlPromise(operation, params)
+
+
 exports.createBucketImpl = (s3, bucket, config) => () => s3
     .createBucket({ Bucket: bucket, CreateBucketConfiguration: config })
     .promise()
