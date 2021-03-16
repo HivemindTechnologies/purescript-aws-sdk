@@ -11,6 +11,10 @@ module AWS.S3
   , GetObjectResponse
   , makeClient
   , putBucketPolicy
+  , GetSignedUrlParams
+  , Operation(..)
+  , SignedUrl(..)
+  , getSignedUrl
   ) where
 
 import AWS.Core.Client (makeClientHelper)
@@ -18,7 +22,9 @@ import AWS.Core.Types (DefaultClientProps, Region(..))
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
 import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
+import Data.Int (round)
 import Data.Newtype (class Newtype)
+import Data.Time.Duration (Seconds(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Justifill (justifillVia)
@@ -102,6 +108,40 @@ getObject client { bucket: BucketName name, key: BucketKey key } =
     , contentEncoding: internalResponse."ContentEncoding"
     , contentType: internalResponse."ContentType"
     }
+
+type InternalGetSignedUrlParams
+  = { "Bucket" :: String
+    , "Key" :: String
+    , "Expires" :: Int
+    }
+
+type GetSignedUrlParams
+  = { bucket :: BucketName
+    , key :: BucketKey
+    , expires :: Seconds
+    }
+
+data Operation
+  = GetObject
+  | PutObject
+
+newtype SignedUrl
+  = SignedUrl String
+
+derive instance ntSignedUrl :: Newtype SignedUrl _
+
+derive newtype instance showSignedUrl :: Show SignedUrl
+
+foreign import getSignedUrlImpl :: Fn3 S3 String InternalGetSignedUrlParams (Effect (Promise String))
+
+getSignedUrl :: S3 -> Operation -> GetSignedUrlParams -> Aff SignedUrl
+getSignedUrl s3 operation { bucket: BucketName bucketName, key: BucketKey bucketKey, expires: Seconds seconds } = runFn3 getSignedUrlImpl s3 (toString operation) params # toAffE <#> SignedUrl
+  where
+  toString GetObject = "getObject"
+
+  toString PutObject = "putObject"
+
+  params = { "Bucket": bucketName, "Key": bucketKey, "Expires": round seconds }
 
 foreign import createBucketImpl :: Fn3 S3 String InternalBucketConfiguration (Effect (Promise InternalCreateBucketResponse))
 

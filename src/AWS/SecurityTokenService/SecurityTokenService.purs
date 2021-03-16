@@ -6,11 +6,15 @@ import AWS.Core.Types (AccessKeyId(..), Arn(..), BasicClientPropsR, ExternalId(.
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Argonaut (Json)
+import Data.Argonaut.Encode (class EncodeJson)
+import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Int (round)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un, class Newtype)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Nullable as Nullable
+import Data.Time.Duration (Seconds(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -22,8 +26,6 @@ import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
 import Record (merge)
 import Type.Proxy (Proxy(..))
-import Data.Argonaut.Encode (class EncodeJson)
-import Data.Argonaut.Encode.Encoders (encodeString)
 
 foreign import data STS :: Type
 
@@ -78,6 +80,7 @@ type InternalAssumeRoleParams
   = { "RoleArn" :: String
     , "ExternalId" :: Nullable String
     , "RoleSessionName" :: String
+    , "DurationSeconds" :: Nullable Int
     }
 
 type InternalAssumeRoleResponse
@@ -98,8 +101,8 @@ type InternalAssumedRoleUser
 
 foreign import assumeRoleImpl :: Fn2 STS InternalAssumeRoleParams (Effect (Promise InternalAssumeRoleResponse))
 
-assumeRole :: STS -> Arn -> Maybe ExternalId -> RoleSessionName -> Aff DefaultClientProps
-assumeRole sts roleArn externalId roleSessionName = toExternal =<< Promise.toAffE curried
+assumeRole :: STS -> Arn -> Maybe ExternalId -> RoleSessionName -> Maybe Seconds -> Aff DefaultClientProps
+assumeRole sts roleArn externalId roleSessionName seconds = toExternal =<< Promise.toAffE curried
   where
   toCredentials :: InternalAssumeRoleResponse -> Maybe DefaultClientProps
   toCredentials r =
@@ -117,11 +120,15 @@ assumeRole sts roleArn externalId roleSessionName = toExternal =<< Promise.toAff
       Just credentials -> pure credentials
       Nothing -> throw "Failed to assume role"
 
+  extractSeconds :: Seconds -> Int
+  extractSeconds (Seconds s) = round s
+
   params :: InternalAssumeRoleParams
   params =
     { "RoleArn": un Arn roleArn
     , "ExternalId": Nullable.toNullable $ externalId <#> un ExternalId
     , "RoleSessionName": un RoleSessionName roleSessionName
+    , "DurationSeconds": Nullable.toNullable (seconds <#> extractSeconds)
     }
 
   curried = runFn2 assumeRoleImpl sts params
