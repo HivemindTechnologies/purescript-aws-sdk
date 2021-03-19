@@ -2,6 +2,7 @@
 , dependencies =
   [ "aff-promise"
   , "argonaut"
+  , "argonaut-codecs"
   , "console"
   , "datetime"
   , "effect"
