@@ -8,6 +8,7 @@ import Data.Formatter.DateTime (formatDateTime)
 import Data.Nullable (Nullable, toMaybe)
 import Data.Unfoldable (fromMaybe)
 import Effect.Exception (Error, error)
+import Data.Argonaut.Decode (JsonDecodeError)
 
 toIso8601Date :: DateTime -> Either String String
 toIso8601Date d = formatDateTime "YYYY-MM-DD" d
@@ -23,3 +24,6 @@ nullToArr = toMaybe >>> fromMaybe
 
 catchAwsError :: forall m e s. MonadError e m => m (Either e s) -> m (Either e s)
 catchAwsError = (flip catchError) (Left >>> pure)
+
+handleError :: JsonDecodeError -> String
+handleError = show
