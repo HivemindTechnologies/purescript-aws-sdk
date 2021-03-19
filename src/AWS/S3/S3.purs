@@ -18,12 +18,17 @@ module AWS.S3
   ) where
 
 import AWS.Core.Client (makeClientHelper)
-import AWS.Core.Types (DefaultClientProps, Region(..))
+import AWS.Core.Types (DefaultClientProps, Region(..), Tags)
+import AWS.Core.Util (raiseEither)
+import Control.Bind ((>>=))
 import Control.Promise (Promise, toAffE)
-import Data.Argonaut (Json)
+import Data.Argonaut (Json, JsonDecodeError, decodeJson)
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Data.Function.Uncurried (Fn2, runFn2, Fn3, runFn3)
 import Data.Int (round)
 import Data.Newtype (class Newtype)
+import Data.Show (show)
 import Data.Time.Duration (Seconds(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -31,7 +36,7 @@ import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Node.Buffer (Buffer)
-import Prelude (Unit, ($), class Show, (#), (<#>))
+import Prelude (class Show, Unit, (#), ($), (<#>), (>>>))
 import Type.Proxy (Proxy(..))
 
 foreign import data S3 :: Type
@@ -69,6 +74,7 @@ type InternalGetObjectResponse
     , "ContentLength" :: Int
     , "ContentEncoding" :: String
     , "ContentType" :: String
+    , "Metadata" :: Json
     }
 
 foreign import getObjectImpl :: Fn2 S3 InternalGetObjectParams (Effect (Promise InternalGetObjectResponse))
@@ -85,29 +91,35 @@ type GetObjectParams
 
 type GetObjectResponse
   = { body :: Buffer
-    , contentLenght :: Int
+    , contentLength :: Int
     , contentEncoding :: String
     , contentType :: String
+    , tags :: Tags 
     }
 
 getObject :: S3 -> GetObjectParams -> Aff GetObjectResponse
 getObject client { bucket: BucketName name, key: BucketKey key } =
   runFn2 getObjectImpl client params
     # toAffE
-    <#> convert
+    >>= (convert >>> lmap show >>> raiseEither)
   where
   params =
     { "Bucket": name
     , "Key": key
     }
 
-  convert :: InternalGetObjectResponse -> GetObjectResponse
-  convert internalResponse =
-    { body: internalResponse."Body"
-    , contentLenght: internalResponse."ContentLength"
-    , contentEncoding: internalResponse."ContentEncoding"
-    , contentType: internalResponse."ContentType"
-    }
+  convert :: InternalGetObjectResponse -> Either JsonDecodeError GetObjectResponse
+  convert internalResponse = parse internalResponse."Metadata" <#> addTags
+    where 
+      addTags tags = { body: internalResponse."Body"
+          , contentLength: internalResponse."ContentLength"
+          , contentEncoding: internalResponse."ContentEncoding"
+          , contentType: internalResponse."ContentType"
+          , tags : tags 
+          }
+      parse :: Json -> Either JsonDecodeError Tags
+      parse = decodeJson 
+    
 
 type InternalGetSignedUrlParams
   = { "Bucket" :: String
