@@ -80,6 +80,7 @@ derive newtype instance encodeEndpoint :: EncodeJson Endpoint
 
 newtype Tags = Tags (Map.Map String String)
 derive newtype instance showTags :: Show Tags
+derive instance ntTags :: Newtype Tags _
 
 instance tagsDecoder :: DecodeJson Tags where 
   decodeJson = decodeAsMap >>> map Tags 

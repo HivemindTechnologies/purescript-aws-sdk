@@ -2,7 +2,6 @@
 
 const { CloudWatchLogs } = require('aws-sdk')
 
-
 exports.newCloudWatchLogs = (params) =>
   () => new CloudWatchLogs(params)
 
@@ -18,8 +17,8 @@ exports.putRetentionPolicyImpl = (cw, groupName, retention) =>
 exports.deleteRetentionPolicyImpl = (cw, groupName) =>
   () => cw.deleteRetentionPolicy({ logGroupName: groupName }).promise()
 
-exports.createExportTaskImpl = (cw, destination, from, groupName, to) => 
-  () => cw.createExportTask({destination: destination, from: from, logGroupName: groupName, to: to}).promise()
+exports.createExportTaskImpl = (cw, destination, from, groupName, to) =>
+  () => cw.createExportTask({ destination: destination, from: from, logGroupName: groupName, to: to }).promise()
 
 exports.listTagsLogGroupImpl = (cw, groupName) =>
-  () => cw.listTagsLogGroup({logGroupName: groupName}).promise()
+  () => cw.listTagsLogGroup({ logGroupName: groupName }).promise()

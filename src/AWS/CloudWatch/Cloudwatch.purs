@@ -9,9 +9,10 @@ module AWS.CloudWatch
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, InstanceId)
+import AWS.Core.Util (handleError)
 import Control.Promise (Promise)
 import Control.Promise as Promise
-import Data.Argonaut (Json, JsonDecodeError, decodeJson, parseJson)
+import Data.Argonaut (Json, decodeJson, parseJson)
 import Data.Bifunctor (lmap)
 import Data.DateTime (DateTime)
 import Data.Either (Either)
@@ -73,9 +74,6 @@ foreign import getMetricStatisticsImpl :: Fn2 CloudWatch InternalGetMetricsStati
 getMetricStatistics :: forall a. CloudWatch -> { start :: DateTime, end :: DateTime | a } -> InstanceId -> Aff (Either String InternalGetMetricStatisticsOutput)
 getMetricStatistics cw range instanceId = liftEffect curried >>= Promise.toAff <#> parse
   where
-  handleError :: JsonDecodeError -> String
-  handleError = show
-
   parse :: String -> Either String InternalGetMetricStatisticsOutput
   parse = (parseJson >=> decodeJson) >>> lmap handleError
 

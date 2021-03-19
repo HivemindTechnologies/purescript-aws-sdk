@@ -16,16 +16,19 @@ module AWS.CloudWatchLogs
   , createExportTask
   , makeClient
   , RetentionInDays(..)
+  , TagContainer
+  , listTagsLogGroup
   ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)
-import AWS.Core.Types (DefaultClientProps)
+import AWS.Core.Util (handleError)
+import AWS.Core.Types (DefaultClientProps, Tags)
 import Control.Monad.Error.Class (throwError)
 import Control.Promise (Promise)
 import Control.Promise as Promise
 import Data.Argonaut (Json)
-import Data.Argonaut.Decode (class DecodeJson)
+import Data.Argonaut.Decode (class DecodeJson, decodeJson)
 import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.Function.Uncurried (Fn2, Fn3, Fn5, runFn2, runFn3, runFn5)
@@ -41,6 +44,8 @@ import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Type.Proxy (Proxy(..))
+import Data.Either (Either)
+import Data.Bifunctor (lmap)
 
 foreign import data CloudWatchLogs :: Type
 
@@ -325,10 +330,17 @@ createExportTask cw (Destination destination) (From from) (LogGroupName logGroup
   Promise.toAffE
     $ runFn5 createExportTaskImpl cw destination from logGroupName to
 
-foreign import listTagsLogGroupImpl :: Fn2 CloudWatchLogs String (Effect (Promise ListTagsLogsGroupResponse))
+foreign import listTagsLogGroupImpl :: Fn2 CloudWatchLogs String (Effect (Promise Json))
 
-type ListTagsLogsGroupResponse
-  = { tags :: String }
+type TagContainer
+  = { tags :: Tags
+    }
 
-listTagsLogGroup :: CloudWatchLogs -> LogGroupName -> Aff ListTagsLogsGroupResponse
-listTagsLogGroup cw (LogGroupName name) = Promise.toAffE $ runFn2 listTagsLogGroupImpl cw name
+listTagsLogGroup :: CloudWatchLogs -> LogGroupName -> Aff (Either String TagContainer)
+listTagsLogGroup cw (LogGroupName name) = liftEffect curried >>= Promise.toAff <#> parse
+  where
+  parse :: Json -> Either String TagContainer
+  parse str = (decodeJson str) # lmap handleError
+
+  curried :: Effect (Promise Json)
+  curried = runFn2 listTagsLogGroupImpl cw name
