@@ -94,7 +94,7 @@ type GetObjectResponse
     , contentLength :: Int
     , contentEncoding :: String
     , contentType :: String
-    , tags :: Tags 
+    , tags :: Tags
     }
 
 getObject :: S3 -> GetObjectParams -> Aff GetObjectResponse
@@ -110,16 +110,17 @@ getObject client { bucket: BucketName name, key: BucketKey key } =
 
   convert :: InternalGetObjectResponse -> Either JsonDecodeError GetObjectResponse
   convert internalResponse = parse internalResponse."Metadata" <#> addTags
-    where 
-      addTags tags = { body: internalResponse."Body"
-          , contentLength: internalResponse."ContentLength"
-          , contentEncoding: internalResponse."ContentEncoding"
-          , contentType: internalResponse."ContentType"
-          , tags : tags 
-          }
-      parse :: Json -> Either JsonDecodeError Tags
-      parse = decodeJson 
-    
+    where
+    addTags tags =
+      { body: internalResponse."Body"
+      , contentLength: internalResponse."ContentLength"
+      , contentEncoding: internalResponse."ContentEncoding"
+      , contentType: internalResponse."ContentType"
+      , tags: tags
+      }
+
+    parse :: Json -> Either JsonDecodeError Tags
+    parse = decodeJson
 
 type InternalGetSignedUrlParams
   = { "Bucket" :: String

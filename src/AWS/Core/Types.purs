@@ -78,16 +78,19 @@ derive newtype instance showEndpoint :: Show Endpoint
 
 derive newtype instance encodeEndpoint :: EncodeJson Endpoint
 
-newtype Tags = Tags (Map.Map String String)
+newtype Tags
+  = Tags (Map.Map String String)
+
 derive newtype instance showTags :: Show Tags
+
 derive instance ntTags :: Newtype Tags _
 
-instance tagsDecoder :: DecodeJson Tags where 
-  decodeJson = decodeAsMap >>> map Tags 
+instance tagsDecoder :: DecodeJson Tags where
+  decodeJson = decodeAsMap >>> map Tags
     where
-      decodeAsMap str = do
-          obj <- decodeJson str
-          pure $ Map.fromFoldable $ (F.toUnfoldable obj :: Array _)
+    decodeAsMap str = do
+      obj <- decodeJson str
+      pure $ Map.fromFoldable $ (F.toUnfoldable obj :: Array _)
 
 type BasicClientPropsR r
   = ( accessKeyId :: Maybe AccessKeyId
