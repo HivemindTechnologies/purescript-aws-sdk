@@ -1,10 +1,10 @@
 module AWS.KMS
   ( makeClient
   , KMS
-  , EncryptionParams
   , Algorithm(..)
-  , Ciphertext
-  , Plaintext
+  , Ciphertext(..)
+  , Plaintext(..)
+  , EncryptionContext(..)
   , EncryptionInput
   , EncryptionOutput
   , DecryptionInput
@@ -19,15 +19,19 @@ import AWS.Core.Types (Arn(..), DefaultClientProps)
 import AWS.Core.Util (raiseEither)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
-import Data.Either (Either(..))
+import Data.Either (Either(..), hush)
 import Data.Function.Uncurried (Fn2, runFn2)
-import Data.Newtype (un)
+import Data.Maybe (Maybe(..))
+import Data.Map (Map)
+import Data.Newtype (class Newtype, un)
+import Debug (spy)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Justifill (justifillVia)
+import Justifill (justifillVia, justifill)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Type.Proxy (Proxy(..))
+import Node.Buffer (Buffer, fromString)
 
 foreign import data KMS :: Type
 
@@ -47,23 +51,20 @@ makeClient r = makeClientHelper newKMS props
   props :: DefaultClientProps
   props = justifillVia viaProxy r
 
-type InternalEncryptionParams r
-  = ( "KeyId" :: String
-    , "EncryptionAlgorithm" :: String
-    | r
-    )
+newtype EncryptionContext
+  = EncryptionContext Json
 
-type InternalPlaintext r
-  = ( "Plaintext" :: String | r )
+derive instance nEncryptionContext :: Newtype EncryptionContext _
 
-type InternalCiphertext r
-  = ( "CiphertextBlob" :: String | r )
+newtype Ciphertext
+  = Ciphertext Buffer
 
-type InternalEncryptionInput
-  = Record (InternalEncryptionParams (InternalPlaintext ()))
+derive instance nCiphertext :: Newtype Ciphertext _
 
-type InternalEncryptionOutput
-  = Record (InternalEncryptionParams (InternalCiphertext ()))
+newtype Plaintext
+  = Plaintext Buffer
+
+derive instance nPlaintext :: Newtype Plaintext _
 
 data Algorithm
   = SYMMETRIC_DEFAULT
@@ -86,64 +87,113 @@ fromInternal "RSAES_OAEP_SHA_256" = Right RSAES_OAEP_SHA_256
 
 fromInternal alg = Left $ "Unable to parse algorithm " <> alg
 
-type EncryptionParams r
-  = ( keyId :: Arn
-    , algorithm :: Algorithm
-    | r
-    )
+type InternalEncryptionInput
+  = { "Plaintext" :: Buffer
+    , "KeyId" :: String
+    , "EncryptionAlgorithm" :: Maybe String
+    , "EncryptionContext" :: Maybe Json
+    }
 
-type Ciphertext r
-  = ( ciphertext :: String | r )
-
-type Plaintext r
-  = ( plaintext :: String | r )
+type InternalEncryptionOutput
+  = { "CiphertextBlob" :: Maybe Buffer
+    , "KeyId" :: Maybe String
+    , "EncryptionAlgorithm" :: Maybe String
+    }
 
 type EncryptionInput
-  = Record (EncryptionParams (Plaintext ()))
+  = { plaintext :: Plaintext
+    , keyId :: Arn
+    , context :: Maybe EncryptionContext
+    , algorithm :: Maybe Algorithm
+    }
 
 type EncryptionOutput
-  = Record (EncryptionParams (Ciphertext ()))
+  = { ciphertext :: Maybe Ciphertext
+    , keyId :: Maybe Arn
+    , algorithm :: Maybe Algorithm
+    }
 
 foreign import encryptImpl :: Fn2 KMS InternalEncryptionInput (Effect (Promise InternalEncryptionOutput))
 
 encrypt :: KMS -> EncryptionInput -> Aff EncryptionOutput
-encrypt client input = runFn2 encryptImpl client params # toAffE <#> convert >>= raiseEither
+encrypt client input = runFn2 encryptImpl client params # toAffE <#> convert
   where
   params =
-    { "KeyId": un Arn input.keyId
-    , "EncryptionAlgorithm": toInternal input.algorithm
-    , "Plaintext": input.plaintext
+    { "Plaintext": un Plaintext input.plaintext
+    , "KeyId": un Arn input.keyId
+    , "EncryptionAlgorithm": input.algorithm <#> toInternal
+    , "EncryptionContext": input.context <#> un EncryptionContext
     }
 
-  convert :: InternalEncryptionOutput -> Either String EncryptionOutput
-  convert internal =
-    fromInternal internal."EncryptionAlgorithm"
-      <#> \alg -> { keyId: Arn internal."KeyId", algorithm: alg, ciphertext: internal."CiphertextBlob" }
+  -- jInput :: EncryptionInput
+  -- jInput = justifill input
+  -- params =
+  --   { "Plaintext": un Plaintext input.plaintext
+  --   , "KeyId": un Arn input.keyId
+  --   , "EncryptionAlgorithm": jInput <#> (_.algorithm >>> toInternal)
+  --   , "EncryptionContext": jInput <#> (_.context >>> un EncryptionContext)
+  --   }
+  convert :: InternalEncryptionOutput -> EncryptionOutput
+  convert output =
+    let
+      alg = output."EncryptionAlgorithm" >>= fromInternal >>> hush
+
+      key = output."KeyId" <#> Arn
+
+      cipher = output."CiphertextBlob" <#> Ciphertext
+    in
+      { keyId: key, algorithm: alg, ciphertext: cipher }
 
 type InternalDecryptionInput
-  = Record (InternalEncryptionParams (InternalCiphertext ()))
+  = { "CiphertextBlob" :: Buffer
+    , "KeyId" :: Maybe String
+    , "EncryptionAlgorithm" :: Maybe String
+    , "EncryptionContext" :: Maybe Json
+    }
 
 type InternalDecryptionOutput
-  = Record (InternalEncryptionParams (InternalPlaintext ()))
+  = { "Plaintext" :: Maybe Buffer
+    , "KeyId" :: Maybe String
+    , "EncryptionAlgorithm" :: Maybe String
+    }
 
 type DecryptionInput
-  = Record (EncryptionParams (Ciphertext ()))
+  = { ciphertext :: Ciphertext -- CiphertextBlob :: String | Buffer | ...
+    , keyId :: Maybe Arn -- KeyId :: String
+    , algorithm :: Maybe Algorithm -- EncryptionAlgorithm :: String
+    , context :: Maybe EncryptionContext -- EncryptionContext :: Map String String
+    }
 
 type DecryptionOutput
-  = Record (EncryptionParams (Plaintext ()))
+  = { plaintext :: Maybe Plaintext -- Plaintext :: String | Buffer | ...
+    , keyId :: Maybe Arn -- KeyId :: String
+    , algorithm :: Maybe Algorithm -- EncryptionAlgorithm :: String
+    }
 
 foreign import decryptImpl :: Fn2 KMS InternalDecryptionInput (Effect (Promise InternalDecryptionOutput))
 
 decrypt :: KMS -> DecryptionInput -> Aff DecryptionOutput
-decrypt client input = runFn2 decryptImpl client params # toAffE <#> convert >>= raiseEither
+decrypt client input = runFn2 decryptImpl client params # toAffE <#> convert
   where
   params =
-    { "KeyId": un Arn input.keyId
-    , "EncryptionAlgorithm": toInternal input.algorithm
-    , "CiphertextBlob": input.ciphertext
+    { "CiphertextBlob": un Ciphertext input.ciphertext
+    , "KeyId": input.keyId <#> un Arn
+    , "EncryptionAlgorithm": input.algorithm <#> toInternal
+    , "EncryptionContext": input.context <#> un EncryptionContext
     }
 
-  convert :: InternalDecryptionOutput -> Either String DecryptionOutput
-  convert internal =
-    fromInternal internal."EncryptionAlgorithm"
-      <#> \alg -> { keyId: Arn internal."KeyId", algorithm: alg, plaintext: internal."Plaintext" }
+  _ = spy "params" params
+
+  convert :: InternalDecryptionOutput -> DecryptionOutput
+  convert output =
+    let
+      alg = output."EncryptionAlgorithm" >>= fromInternal >>> hush
+
+      key = output."KeyId" <#> Arn
+
+      plain = output."Plaintext" <#> Plaintext
+    in
+      { keyId: key, algorithm: alg, plaintext: plain }
+
+-- fromInternal output."EncryptionAlgorithm"
+--   <#> \alg -> { plaintext: Plaintext output."Plaintext", keyId: Arn output."KeyId", algorithm: alg }
