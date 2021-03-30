@@ -8,6 +8,12 @@ exports.encryptImpl = (kms, params) => () => kms
     .encrypt(params)
     .promise()
 
-exports.decryptImpl = (kms, params) => () => kms
+exports.decryptImpl = (kms, params) => () => {
+    console.log("kms call params", params)
+    const p = kms
     .decrypt(params)
     .promise()
+
+    p.then(console.log)
+    return p
+}

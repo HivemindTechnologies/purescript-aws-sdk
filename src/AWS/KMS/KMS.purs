@@ -4,7 +4,6 @@ module AWS.KMS
   , Algorithm(..)
   , Ciphertext(..)
   , Plaintext(..)
-  , EncryptionContext(..)
   , EncryptionInput
   , EncryptionOutput
   , DecryptionInput
@@ -14,24 +13,26 @@ module AWS.KMS
   ) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (Arn(..), DefaultClientProps)
 import AWS.Core.Util (raiseEither)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
+import Data.Argonaut.Encode (class EncodeJson, encodeJson)
 import Data.Either (Either(..), hush)
 import Data.Function.Uncurried (Fn2, runFn2)
-import Data.Maybe (Maybe(..))
 import Data.Map (Map)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, un)
-import Debug (spy)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Justifill (justifillVia, justifill)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
-import Type.Proxy (Proxy(..))
 import Node.Buffer (Buffer, fromString)
+import Type.Proxy (Proxy(..))
 
 foreign import data KMS :: Type
 
@@ -50,11 +51,6 @@ makeClient r = makeClientHelper newKMS props
 
   props :: DefaultClientProps
   props = justifillVia viaProxy r
-
-newtype EncryptionContext
-  = EncryptionContext Json
-
-derive instance nEncryptionContext :: Newtype EncryptionContext _
 
 newtype Ciphertext
   = Ciphertext Buffer
@@ -103,7 +99,7 @@ type InternalEncryptionOutput
 type EncryptionInput
   = { plaintext :: Plaintext
     , keyId :: Arn
-    , context :: Maybe EncryptionContext
+    , context :: Maybe Json
     , algorithm :: Maybe Algorithm
     }
 
@@ -122,7 +118,7 @@ encrypt client input = runFn2 encryptImpl client params # toAffE <#> convert
     { "Plaintext": un Plaintext input.plaintext
     , "KeyId": un Arn input.keyId
     , "EncryptionAlgorithm": input.algorithm <#> toInternal
-    , "EncryptionContext": input.context <#> un EncryptionContext
+    , "EncryptionContext": input.context
     }
 
   -- jInput :: EncryptionInput
@@ -146,22 +142,28 @@ encrypt client input = runFn2 encryptImpl client params # toAffE <#> convert
 
 type InternalDecryptionInput
   = { "CiphertextBlob" :: Buffer
-    , "KeyId" :: Maybe String
-    , "EncryptionAlgorithm" :: Maybe String
-    , "EncryptionContext" :: Maybe Json
+    -- , "KeyId" :: Maybe String
+    -- , "EncryptionAlgorithm" :: Maybe String
+    , "EncryptionContext" :: Nullable Json
     }
 
 type InternalDecryptionOutput
-  = { "Plaintext" :: Maybe Buffer
-    , "KeyId" :: Maybe String
-    , "EncryptionAlgorithm" :: Maybe String
+  = { "Plaintext" :: Nullable Buffer
+    , "KeyId" :: Nullable String
+    , "EncryptionAlgorithm" :: Nullable String
     }
-
-type DecryptionInput
+{-
+{ KeyId:
+   'arn:aws:kms:eu-central-1:346347395287:key/9290ffd1-3eb7-4cad-9345-61c1866b5750',
+  Plaintext:
+   <Buffer 1d 65 3e c0 f6 47 00 97 a9 59 76 2a b4 b2 c9 0e 01 c4 82 8d 78 d8 d2 df ba c9 9d 23 4b 63 6b 4f>,
+  EncryptionAlgorithm: 'SYMMETRIC_DEFAULT' }
+-}
+type DecryptionInput ec
   = { ciphertext :: Ciphertext -- CiphertextBlob :: String | Buffer | ...
-    , keyId :: Maybe Arn -- KeyId :: String
-    , algorithm :: Maybe Algorithm -- EncryptionAlgorithm :: String
-    , context :: Maybe EncryptionContext -- EncryptionContext :: Map String String
+    -- , keyId :: Maybe Arn -- KeyId :: String
+    -- , algorithm :: Maybe Algorithm -- EncryptionAlgorithm :: String
+    , context :: Maybe ec -- EncryptionContext :: Map String String
     }
 
 type DecryptionOutput
@@ -172,26 +174,25 @@ type DecryptionOutput
 
 foreign import decryptImpl :: Fn2 KMS InternalDecryptionInput (Effect (Promise InternalDecryptionOutput))
 
-decrypt :: KMS -> DecryptionInput -> Aff DecryptionOutput
+decrypt :: forall ec. EncodeJson ec => KMS -> DecryptionInput ec -> Aff DecryptionOutput
 decrypt client input = runFn2 decryptImpl client params # toAffE <#> convert
   where
   params =
     { "CiphertextBlob": un Ciphertext input.ciphertext
-    , "KeyId": input.keyId <#> un Arn
-    , "EncryptionAlgorithm": input.algorithm <#> toInternal
-    , "EncryptionContext": input.context <#> un EncryptionContext
+    -- , "KeyId": input.keyId <#> un Arn
+    -- , "EncryptionAlgorithm": input.algorithm <#> toInternal
+    , "EncryptionContext": input.context <#> encodeJson # toNullable
     }
 
-  _ = spy "params" params
-
+  -- _ = spy "params" params
   convert :: InternalDecryptionOutput -> DecryptionOutput
   convert output =
     let
-      alg = output."EncryptionAlgorithm" >>= fromInternal >>> hush
+      alg = output."EncryptionAlgorithm" # toMaybe >>= fromInternal >>> hush
 
-      key = output."KeyId" <#> Arn
+      key = output."KeyId" # toMaybe <#> Arn
 
-      plain = output."Plaintext" <#> Plaintext
+      plain = output."Plaintext" # toMaybe <#> Plaintext
     in
       { keyId: key, algorithm: alg, plaintext: plain }
 
