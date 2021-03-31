@@ -86,5 +86,5 @@ getMetricStatistics cw range instanceId = liftEffect curried >>= Promise.toAff <
       , "Statistics": [ "Maximum" ]
       , "StartTime": fromDateTime range.start
       , "EndTime": fromDateTime range.end
-      , "Period": 120000
+      , "Period": 86400
       }
