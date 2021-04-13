@@ -46,10 +46,14 @@ instance showDimensionName :: Show DimensionName where
 data MetricName
   = CPUUtilization
   | CPUReservation
+  | MemoryUtilization
+  | MemoryReservation
 
 instance showMetricName :: Show MetricName where
   show CPUUtilization = "CPUUtilization"
   show CPUReservation = "CPUReservation"
+  show MemoryUtilization = "MemoryUtilization"
+  show MemoryReservation = "MemoryReservation"
 
 type Dimension
   = { name :: DimensionName, value :: DimensionValue }
