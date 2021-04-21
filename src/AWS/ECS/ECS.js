@@ -7,3 +7,6 @@ exports.newECS = (params) =>
 
 exports.listClustersImpl = (ecs) =>
   () => ecs.listClusters().promise()
+
+exports.listTasksImpl = (ecs, clusterName) =>
+  () => ecs.listTasks({ cluster: clusterName }).promise()

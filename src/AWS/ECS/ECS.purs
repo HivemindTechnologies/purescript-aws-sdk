@@ -2,17 +2,18 @@ module AWS.ECS
   ( ECS
   , makeClient
   , listClusters
+  , listTasks
   ) where
 
 import Prelude
 
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
-import AWS.ECS.Types (ListClustersResponse)
+import AWS.ECS.Types (ClusterArn(..), ListClustersResponse, ListTasksResponse)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
-import Data.Function.Uncurried (Fn1, runFn1)
-import Data.Newtype (wrap)
+import Data.Function.Uncurried (Fn1, Fn2, runFn1, runFn2)
+import Data.Newtype (un, wrap)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Justifill (justifillVia)
@@ -51,3 +52,17 @@ listClusters ecs =
   where
   toResponse :: InternalListClustersResponse -> ListClustersResponse
   toResponse internalRspse = { clusterArns: internalRspse."clusterArns" <#> wrap }
+
+foreign import listTasksImpl :: Fn2 ECS String (Effect (Promise InternalListTasksResponse))
+
+type InternalListTasksResponse
+  = { taskArns :: Array String }
+
+listTasks :: ECS -> ClusterArn -> Aff ListTasksResponse
+listTasks ecs clusterArn =
+  runFn2 listTasksImpl ecs (un ClusterArn clusterArn)
+    # toAffE
+    <#> toResponse
+  where
+  toResponse :: InternalListTasksResponse -> ListTasksResponse
+  toResponse internalRspse = { taskArns: internalRspse."taskArns" <#> wrap }

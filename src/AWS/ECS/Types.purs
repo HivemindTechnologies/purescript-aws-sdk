@@ -15,3 +15,16 @@ type Clusters
 
 type ListClustersResponse
   = { clusterArns :: Clusters }
+
+newtype TaskArn
+  = TaskArn String
+
+derive instance ntTaskArn :: Newtype TaskArn _
+
+derive newtype instance showTaskArn :: Show TaskArn
+
+type Tasks
+  = Array TaskArn
+
+type ListTasksResponse
+  = { taskArns :: Tasks }
