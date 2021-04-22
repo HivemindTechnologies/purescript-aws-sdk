@@ -4,10 +4,10 @@ module AWS.ECS
   , listClusters
   , listTasks
   , listContainerInstances
+  , describeClusters
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.ECS.Types (ClusterArn(..), ContainerInstanceArn(..), ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse, Clusters, DescribeClustersResponse, ClusterParams)
@@ -90,11 +90,8 @@ type InternalCluster r
     | r
     }
 
-type InternalClusters r
-  = Array (InternalCluster r)
-
 type InternalDescribeClustersResponse r
-  = { clusters :: InternalClusters r }
+  = { clusters :: Array (InternalCluster r) }
 
 foreign import describeClustersImpl :: forall r. Fn2 ECS (Array String) (Effect (Promise (InternalDescribeClustersResponse r)))
 
@@ -105,10 +102,10 @@ describeClusters ecs clusterArns =
     <#> toResponse
   where
   toResponse :: forall r. InternalDescribeClustersResponse r -> DescribeClustersResponse
-  toResponse internalRspse = { clusters: internalRspse."clusters" <#> toDescribeClustersResponse }
+  toResponse internalRspse = { clusters: internalRspse."clusters" <#> toClusterParams }
 
-  toDescribeClustersResponse :: forall r. InternalCluster r -> ClusterParams
-  toDescribeClustersResponse i =
+  toClusterParams :: forall r. InternalCluster r -> ClusterParams
+  toClusterParams i =
     { clusterArn: i.clusterArn
     , clusterName: i.clusterName
     , status: i.status
