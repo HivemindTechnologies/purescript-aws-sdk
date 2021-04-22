@@ -14,7 +14,7 @@ import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (handleError)
-import AWS.ECS.Types (Tasks, DescribeTasksResponse, ClusterArn(..), ClusterParams, Clusters, ContainerInstanceArn(..), ContainerInstanceParams, ContainerInstances, DescribeClustersResponse, DescribeContainerInstancesResponse, ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse)
+import AWS.ECS.Types (Tasks, DescribeTasksResponse, ClusterArn(..), ClusterParams, Clusters, ContainerInstanceArn(..), ContainerInstanceParams, ContainerInstances, DescribeClustersResponse, DescribeContainerInstancesResponse, ListClustersResponse, ListTasksResponse, ListContainerInstancesResponse)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json, decodeJson)
 import Data.Bifunctor (lmap)
