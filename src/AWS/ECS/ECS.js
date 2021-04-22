@@ -10,3 +10,6 @@ exports.listClustersImpl = (ecs) =>
 
 exports.listTasksImpl = (ecs, clusterName) =>
   () => ecs.listTasks({ cluster: clusterName }).promise()
+
+exports.listContainerInstancesImpl = (ecs, clusterArn) =>
+  () => ecs.listContainerInstances({ cluster: clusterArn }).promise()

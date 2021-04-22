@@ -28,3 +28,16 @@ type Tasks
 
 type ListTasksResponse
   = { taskArns :: Tasks }
+
+newtype ContainerInstanceArn
+  = ContainerInstanceArn String
+
+derive instance ntContainerInstanceArn :: Newtype ContainerInstanceArn _
+
+derive newtype instance showContainerInstanceArn :: Show ContainerInstanceArn
+
+type ContainterInstances
+  = Array ContainerInstanceArn
+
+type ListContainerInstancesResponse
+  = { containerInstanceArns :: ContainterInstances }
