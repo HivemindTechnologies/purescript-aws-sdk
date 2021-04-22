@@ -6,7 +6,6 @@ module AWS.CloudWatch
   ) where
 
 import Prelude
-
 import AWS.CloudWatch.Types (Dimension, GetMetricStatisticsOutput, MetricDatapointMaximum, MetricSettings, Statistics, MetricDatapointAverage)
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)

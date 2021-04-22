@@ -8,8 +8,8 @@ exports.newECS = (params) =>
 exports.listClustersImpl = (ecs) =>
   () => ecs.listClusters().promise()
 
-exports.listTasksImpl = (ecs, clusterName) =>
-  () => ecs.listTasks({ cluster: clusterName }).promise()
+exports.listTasksImpl = (ecs, clusterArn, containerInstanceArn) =>
+  () => ecs.listTasks({ cluster: clusterArn, containerInstance: containerInstanceArn }).promise()
 
 exports.listContainerInstancesImpl = (ecs, clusterArn) =>
   () => ecs.listContainerInstances({ cluster: clusterArn }).promise()

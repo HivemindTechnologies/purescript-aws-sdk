@@ -9,10 +9,10 @@ module AWS.ECS
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
-import AWS.ECS.Types (ClusterArn(..), ListClustersResponse, ListTasksResponse, ListContainerInstancesResponse)
+import AWS.ECS.Types (ClusterArn(..), ContainerInstanceArn(..), ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
-import Data.Function.Uncurried (Fn1, Fn2, runFn1, runFn2)
+import Data.Function.Uncurried (Fn1, Fn2, Fn3, runFn1, runFn2, runFn3)
 import Data.Newtype (un, wrap)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -53,14 +53,14 @@ listClusters ecs =
   toResponse :: InternalListClustersResponse -> ListClustersResponse
   toResponse internalRspse = { clusterArns: internalRspse."clusterArns" <#> wrap }
 
-foreign import listTasksImpl :: Fn2 ECS String (Effect (Promise InternalListTasksResponse))
+foreign import listTasksImpl :: Fn3 ECS String String (Effect (Promise InternalListTasksResponse))
 
 type InternalListTasksResponse
   = { taskArns :: Array String }
 
-listTasks :: ECS -> ClusterArn -> Aff ListTasksResponse
-listTasks ecs clusterArn =
-  runFn2 listTasksImpl ecs (un ClusterArn clusterArn)
+listTasks :: ECS -> ClusterArn -> ContainerInstanceArn -> Aff ListTasksResponse
+listTasks ecs clusterArn containerInstanceArn =
+  runFn3 listTasksImpl ecs (un ClusterArn clusterArn) (un ContainerInstanceArn containerInstanceArn)
     # toAffE
     <#> toResponse
   where
