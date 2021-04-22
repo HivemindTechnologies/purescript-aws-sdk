@@ -41,3 +41,13 @@ type ContainterInstances
 
 type ListContainerInstancesResponse
   = { containerInstanceArns :: ContainterInstances }
+
+type ClusterParams
+  = { clusterArn :: String
+    , clusterName :: String
+    , status :: String
+    , registeredContainerInstancesCount :: Number
+    }
+
+type DescribeClustersResponse
+  = { clusters :: Array ClusterParams }

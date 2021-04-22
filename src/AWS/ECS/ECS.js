@@ -13,3 +13,6 @@ exports.listTasksImpl = (ecs, clusterArn, containerInstanceArn) =>
 
 exports.listContainerInstancesImpl = (ecs, clusterArn) =>
   () => ecs.listContainerInstances({ cluster: clusterArn }).promise()
+
+exports.describeClustersImpl = (ecs, clusterArns) =>
+  () => ecs.describeClusters({ clusters: clusterArns }).promise()

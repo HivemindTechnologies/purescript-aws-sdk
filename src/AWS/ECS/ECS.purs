@@ -7,13 +7,14 @@ module AWS.ECS
   ) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
-import AWS.ECS.Types (ClusterArn(..), ContainerInstanceArn(..), ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse)
+import AWS.ECS.Types (ClusterArn(..), ContainerInstanceArn(..), ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse, Clusters, DescribeClustersResponse, ClusterParams)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
 import Data.Function.Uncurried (Fn1, Fn2, Fn3, runFn1, runFn2, runFn3)
-import Data.Newtype (un, wrap)
+import Data.Newtype (un, wrap, unwrap)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Justifill (justifillVia)
@@ -80,3 +81,36 @@ listContainerInstances ecs clusterArn =
   where
   toResponse :: InternalListContainerInstancesResponse -> ListContainerInstancesResponse
   toResponse internalRspse = { containerInstanceArns: internalRspse."containerInstanceArns" <#> wrap }
+
+type InternalCluster r
+  = { clusterArn :: String
+    , clusterName :: String
+    , status :: String
+    , registeredContainerInstancesCount :: Number
+    | r
+    }
+
+type InternalClusters r
+  = Array (InternalCluster r)
+
+type InternalDescribeClustersResponse r
+  = { clusters :: InternalClusters r }
+
+foreign import describeClustersImpl :: forall r. Fn2 ECS (Array String) (Effect (Promise (InternalDescribeClustersResponse r)))
+
+describeClusters :: ECS -> Clusters -> Aff DescribeClustersResponse
+describeClusters ecs clusterArns =
+  runFn2 describeClustersImpl ecs (clusterArns <#> unwrap)
+    # toAffE
+    <#> toResponse
+  where
+  toResponse :: forall r. InternalDescribeClustersResponse r -> DescribeClustersResponse
+  toResponse internalRspse = { clusters: internalRspse."clusters" <#> toDescribeClustersResponse }
+
+  toDescribeClustersResponse :: forall r. InternalCluster r -> ClusterParams
+  toDescribeClustersResponse i =
+    { clusterArn: i.clusterArn
+    , clusterName: i.clusterName
+    , status: i.status
+    , registeredContainerInstancesCount: i.registeredContainerInstancesCount
+    }
