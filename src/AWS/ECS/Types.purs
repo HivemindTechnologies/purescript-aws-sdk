@@ -36,11 +36,11 @@ derive instance ntContainerInstanceArn :: Newtype ContainerInstanceArn _
 
 derive newtype instance showContainerInstanceArn :: Show ContainerInstanceArn
 
-type ContainterInstances
+type ContainerInstances
   = Array ContainerInstanceArn
 
 type ListContainerInstancesResponse
-  = { containerInstanceArns :: ContainterInstances }
+  = { containerInstanceArns :: ContainerInstances }
 
 type ClusterParams
   = { clusterArn :: String
@@ -51,3 +51,11 @@ type ClusterParams
 
 type DescribeClustersResponse
   = { clusters :: Array ClusterParams }
+
+type ContainerInstanceParams
+  = { containerInstanceArn :: String
+    , ec2InstanceId :: String
+    }
+
+type DescribeContainerInstancesResponse
+  = { containerInstances :: Array ContainerInstanceParams }

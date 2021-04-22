@@ -5,12 +5,13 @@ module AWS.ECS
   , listTasks
   , listContainerInstances
   , describeClusters
+  , describeContainerInstances
   ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
-import AWS.ECS.Types (ClusterArn(..), ContainerInstanceArn(..), ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse, Clusters, DescribeClustersResponse, ClusterParams)
+import AWS.ECS.Types (ClusterArn(..), ClusterParams, Clusters, ContainerInstanceArn(..), DescribeClustersResponse, ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse, ContainerInstances, DescribeContainerInstancesResponse, ContainerInstanceParams)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
 import Data.Function.Uncurried (Fn1, Fn2, Fn3, runFn1, runFn2, runFn3)
@@ -110,4 +111,30 @@ describeClusters ecs clusterArns =
     , clusterName: i.clusterName
     , status: i.status
     , registeredContainerInstancesCount: i.registeredContainerInstancesCount
+    }
+
+type InternalContainerInstanceParams r
+  = { containerInstanceArn :: String
+    , ec2InstanceId :: String
+    | r
+    }
+
+type InternalDescribeContainerInstancesResponse r
+  = { containerInstances :: Array (InternalContainerInstanceParams r) }
+
+foreign import describeContainerInstancesImpl :: forall r. Fn3 ECS String (Array String) (Effect (Promise (InternalDescribeContainerInstancesResponse r)))
+
+describeContainerInstances :: ECS -> ClusterArn -> ContainerInstances -> Aff DescribeContainerInstancesResponse
+describeContainerInstances ecs clusterArn containers =
+  runFn3 describeContainerInstancesImpl ecs (unwrap clusterArn) (containers <#> unwrap)
+    # toAffE
+    <#> toResponse
+  where
+  toResponse :: forall r. InternalDescribeContainerInstancesResponse r -> DescribeContainerInstancesResponse
+  toResponse internalRspse = { containerInstances: internalRspse."containerInstances" <#> toContainerInstanceParams }
+
+  toContainerInstanceParams :: forall r. InternalContainerInstanceParams r -> ContainerInstanceParams
+  toContainerInstanceParams i =
+    { containerInstanceArn: i.containerInstanceArn
+    , ec2InstanceId: i.ec2InstanceId
     }
