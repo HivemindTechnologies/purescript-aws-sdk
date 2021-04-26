@@ -6,6 +6,7 @@ module AWS.ECS
   , listContainerInstances
   , describeClusters
   , describeContainerInstances
+  , newECS
   ) where
 
 import Prelude
