@@ -7,14 +7,18 @@ module AWS.ECS
   , describeClusters
   , describeContainerInstances
   , newECS
+  , describeTasks
   ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
-import AWS.ECS.Types (ClusterArn(..), ClusterParams, Clusters, ContainerInstanceArn(..), DescribeClustersResponse, ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse, ContainerInstances, DescribeContainerInstancesResponse, ContainerInstanceParams)
+import AWS.Core.Util (handleError)
+import AWS.ECS.Types (Tasks, DescribeTasksResponse, ClusterArn(..), ClusterParams, Clusters, ContainerInstanceArn(..), ContainerInstanceParams, ContainerInstances, DescribeClustersResponse, DescribeContainerInstancesResponse, ListClustersResponse, ListContainerInstancesResponse, ListTasksResponse)
 import Control.Promise (Promise, toAffE)
-import Data.Argonaut (Json)
+import Data.Argonaut (Json, decodeJson)
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Data.Function.Uncurried (Fn1, Fn2, Fn3, runFn1, runFn2, runFn3)
 import Data.Newtype (un, wrap, unwrap)
 import Effect (Effect)
@@ -139,3 +143,14 @@ describeContainerInstances ecs clusterArn containers =
     { containerInstanceArn: i.containerInstanceArn
     , ec2InstanceId: i.ec2InstanceId
     }
+
+foreign import describeTasksImpl :: Fn3 ECS (Array String) String (Effect (Promise (Json)))
+
+describeTasks :: ECS -> Tasks -> ClusterArn -> Aff (Either String (DescribeTasksResponse ()))
+describeTasks ecs tasks cluster =
+  runFn3 describeTasksImpl ecs (tasks <#> unwrap) (unwrap cluster)
+    # toAffE
+    <#> parse
+  where
+  parse :: Json -> Either String (DescribeTasksResponse ())
+  parse = decodeJson <#> lmap handleError

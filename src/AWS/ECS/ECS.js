@@ -19,3 +19,6 @@ exports.describeClustersImpl = (ecs, clusterArns) =>
 
 exports.describeContainerInstancesImpl = (ecs, clusterArn, containerInstanceArns) =>
   () => ecs.describeContainerInstances({ cluster: clusterArn, containerInstances: containerInstanceArns }).promise()
+
+exports.describeTasksImpl = (ecs, taskArns, clusterArn) =>
+  () => ecs.describeTasks({ tasks: taskArns, cluster: clusterArn }).promise()
