@@ -60,7 +60,7 @@ with Attribute.InstanceType
 }
 -}
 type Raw a
-  = ( "InstanceId" :: String | a)
+  = ( "InstanceId" :: String | a )
 
 type InstanceTypeAttribute a
   = { "InstanceType" :: { "Value" :: String }

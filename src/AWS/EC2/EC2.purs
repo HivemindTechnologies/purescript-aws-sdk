@@ -12,7 +12,6 @@ module AWS.EC2
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Instance, InstanceId(..), InstanceType(..))
 import AWS.Core.Util (handleError)
@@ -216,4 +215,4 @@ describeInstanceTypeAttribute ec2 attribute instanceId =
     <#> parse
   where
   parse :: Json -> Either String (InstanceTypeAttribute ())
-  parse =  decodeJson <#> lmap handleError
+  parse = decodeJson <#> lmap handleError
