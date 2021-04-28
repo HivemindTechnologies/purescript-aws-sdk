@@ -6,7 +6,6 @@ module AWS.Pricing
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (handleError, unfoldrM1)
@@ -14,13 +13,12 @@ import AWS.Pricing.Types (Filter, GetProductsResponse, ServiceCode, PriceList)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json, decodeJson)
 import Data.Bifunctor (lmap)
-import Data.Either (hush)
+import Data.Either (Either)
 import Data.Function.Uncurried (Fn5, runFn5)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
-import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -81,13 +79,13 @@ getProducts pricing filters serviceCode token max =
     , "Value": unwrap filter.value
     }
 
-  toPriceList :: Json -> Maybe (PriceList ())
-  toPriceList = decodeJson <#> lmap handleError >>> hush
+  toPriceList :: Json -> Either String (PriceList ())
+  toPriceList = decodeJson <#> lmap handleError
 
   toResponse :: InternalGetProductsResponse -> GetProductsResponse
   toResponse internal =
     { formatVersion: internal."FormatVersion"
-    , priceList: sequence $ internal."PriceList" <#> toPriceList
+    , priceList: internal."PriceList" <#> toPriceList
     , nextToken: Nullable.toMaybe internal."NextToken"
     }
 
@@ -103,7 +101,7 @@ getAllProducts ::
   ServiceCode ->
   Maybe String ->
   Maybe Number ->
-  Aff (Maybe (Array (PriceList())))
+  Aff (Array (Either String (PriceList ())))
 getAllProducts api filters serviceCode token max = do
   initial :: GetProductsResponse <- getProducts api filters serviceCode token max
   unfoldrM1 initial.nextToken
@@ -112,7 +110,7 @@ getAllProducts api filters serviceCode token max = do
         let
           nextToken = products.nextToken
 
-          prod = products.priceList
-        pure $ Tuple prod nextToken
+          priceList = products.priceList
+        pure $ Tuple priceList nextToken
     )
     <#> (\remaining -> (pure initial.priceList <> remaining) # join)
