@@ -18,12 +18,14 @@ module AWS.CloudWatchLogs
   , RetentionInDays(..)
   , TagContainer
   , listTagsLogGroup
+  , describeAllLogGroups
+  , describeLogStreams
   ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)
-import AWS.Core.Util (handleError)
 import AWS.Core.Types (DefaultClientProps, Tags)
+import AWS.Core.Util (handleError, unfoldrM1)
 import Control.Monad.Error.Class (throwError)
 import Control.Promise (Promise)
 import Control.Promise as Promise
@@ -31,11 +33,14 @@ import Data.Argonaut (Json)
 import Data.Argonaut.Decode (class DecodeJson, decodeJson)
 import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Encoders (encodeString)
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Data.Function.Uncurried (Fn2, Fn3, Fn5, runFn2, runFn3, runFn5)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -44,8 +49,6 @@ import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
 import Type.Proxy (Proxy(..))
-import Data.Either (Either)
-import Data.Bifunctor (lmap)
 
 foreign import data CloudWatchLogs :: Type
 
@@ -272,6 +275,16 @@ describeLogGroups cloudWatchLogs params = liftEffect (curried cloudWatchLogs int
 
   curried :: CloudWatchLogs -> InternalDescribeLogGroupsParams -> Effect (Promise InternalDescribeLogGroupsResponse)
   curried = runFn2 describeLogGroupsImpl
+
+describeAllLogGroups :: CloudWatchLogs -> Aff (Array LogGroup)
+describeAllLogGroups api = do
+  initial <- describeLogGroups api { nextToken: Nothing }
+  unfoldrM1 initial.nextToken
+    ( \(currentNextToken :: String) -> do
+        { logGroups, nextToken } <- describeLogGroups api { nextToken: Just currentNextToken }
+        pure $ Tuple logGroups nextToken
+    )
+    <#> (\remaining -> (pure initial.logGroups <> remaining) # join)
 
 foreign import describeLogStreamsImpl :: Fn2 CloudWatchLogs InternalDescribeLogStreamsParams (Effect (Promise InternalDescribeLogStreamsResponse))
 
