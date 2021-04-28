@@ -41,6 +41,6 @@ type PriceList r
 
 type GetProductsResponse
   = { formatVersion :: String
-    , priceList :: Array (Either String (PriceList ()))
+    , priceList :: Maybe (Array (PriceList ()))
     , nextToken :: Maybe String
     }
