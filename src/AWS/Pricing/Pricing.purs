@@ -6,12 +6,14 @@ module AWS.Pricing
   ) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (handleError, unfoldrM1)
-import AWS.Pricing.Types (Filter, GetProductsResponse, PriceList, ServiceCode)
+import AWS.Pricing.Types (Filter, PriceList, ServiceCode, GetProductsResponse)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json, decodeJson)
+import Data.Array (concat)
 import Data.Bifunctor (lmap)
 import Data.Either (Either)
 import Data.Function.Uncurried (Fn5, runFn5)
@@ -94,16 +96,28 @@ getAllProducts ::
   ServiceCode ->
   Maybe String ->
   Maybe Number ->
-  Aff (Array (Either String (PriceList)))
+  Aff (Array (Either String PriceList))
 getAllProducts api filters serviceCode token max = do
   initial :: GetProductsResponse <- getProducts api filters serviceCode token max
-  unfoldrM1 initial.nextToken
-    ( \(currentNextToken :: String) -> do
-        products <- getProducts api filters serviceCode (Just currentNextToken) max
-        let
-          nextToken = products.nextToken
+  next :: Array (Array (Either String PriceList)) <- fetchAllNext initial.nextToken
+  let
+    all :: Array (Array (Either String PriceList))
+    all = pure initial.priceList <> next
 
-          priceList = products.priceList
-        pure $ Tuple priceList nextToken
-    )
-    <#> (\remaining -> (pure initial.priceList <> remaining) # join)
+    allFlatten :: Array (Either String PriceList)
+    allFlatten = all # join
+
+  pure allFlatten
+  where
+  -- func
+  getProductsAndNextToken :: String -> Aff (Tuple (Array (Either String PriceList)) (Maybe String))
+  getProductsAndNextToken currentNextToken = do
+    products <- getProducts api filters serviceCode (Just currentNextToken) max
+    let
+      nextToken = products.nextToken
+
+      priceList = products.priceList
+    pure $ Tuple priceList nextToken
+
+  fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceList)))
+  fetchAllNext token = unfoldrM1 token getProductsAndNextToken
