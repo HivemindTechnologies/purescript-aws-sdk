@@ -9,7 +9,7 @@ import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (handleError, unfoldrM1)
-import AWS.Pricing.Types (Filter, GetProductsResponse, ServiceCode, PriceList)
+import AWS.Pricing.Types (Filter, GetProductsResponse, PriceList, ServiceCode)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json, decodeJson)
 import Data.Bifunctor (lmap)
@@ -45,13 +45,6 @@ makeClient r = makeClientHelper newPricing props
   props :: DefaultClientProps
   props = justifillVia viaProxy r
 
-{-
-  {
-    "Field": "ServiceCode",
-    "Type": "TERM_MATCH",
-    "Value": "AmazonEC2"
-  },
--}
 type InternalFilter
   = { "Field" :: String
     , "Type" :: String
@@ -79,7 +72,7 @@ getProducts pricing filters serviceCode token max =
     , "Value": unwrap filter.value
     }
 
-  toPriceList :: Json -> Either String (PriceList ())
+  toPriceList :: Json -> Either String PriceList
   toPriceList = decodeJson <#> lmap handleError
 
   toResponse :: InternalGetProductsResponse -> GetProductsResponse
@@ -101,7 +94,7 @@ getAllProducts ::
   ServiceCode ->
   Maybe String ->
   Maybe Number ->
-  Aff (Array (Either String (PriceList ())))
+  Aff (Array (Either String (PriceList)))
 getAllProducts api filters serviceCode token max = do
   initial :: GetProductsResponse <- getProducts api filters serviceCode token max
   unfoldrM1 initial.nextToken

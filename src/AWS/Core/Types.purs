@@ -1,12 +1,13 @@
 module AWS.Core.Types where
 
+import Data.Argonaut (class DecodeJson, Json, JsonDecodeError, decodeJson)
+import Data.Argonaut.Encode (class EncodeJson)
+import Data.Either (Either)
+import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
-import Prelude (class Show, bind, ($), pure, (>>>), map)
-import Data.Argonaut.Encode (class EncodeJson)
-import Data.Argonaut (class DecodeJson, decodeJson)
 import Foreign.Object as F
-import Data.Map as Map
+import Prelude (class Show, bind, ($), pure, (>>>), map)
 
 newtype AccessKeyId
   = AccessKeyId String
@@ -78,6 +79,11 @@ derive newtype instance showEndpoint :: Show Endpoint
 
 derive newtype instance encodeEndpoint :: EncodeJson Endpoint
 
+decodeAsMap :: forall r. DecodeJson r => Json -> Either JsonDecodeError (Map.Map String r)
+decodeAsMap str = do
+  obj <- decodeJson str
+  pure $ Map.fromFoldable $ (F.toUnfoldable obj :: Array _)
+
 newtype Tags
   = Tags (Map.Map String String)
 
@@ -87,10 +93,6 @@ derive instance ntTags :: Newtype Tags _
 
 instance tagsDecoder :: DecodeJson Tags where
   decodeJson = decodeAsMap >>> map Tags
-    where
-    decodeAsMap str = do
-      obj <- decodeJson str
-      pure $ Map.fromFoldable $ (F.toUnfoldable obj :: Array _)
 
 type BasicClientPropsR r
   = ( accessKeyId :: Maybe AccessKeyId
