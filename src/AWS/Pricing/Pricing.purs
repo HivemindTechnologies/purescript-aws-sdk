@@ -92,10 +92,9 @@ getAllProducts ::
   Pricing ->
   Array Filter ->
   ServiceCode ->
-  Maybe String ->
   Aff (Array (Either String PriceList))
-getAllProducts api filters serviceCode token = do
-  initial :: GetProductsResponse <- getProducts api filters serviceCode token Nothing
+getAllProducts api filters serviceCode = do
+  initial :: GetProductsResponse <- getProducts api filters serviceCode Nothing Nothing
   next :: Array (Array (Either String PriceList)) <- fetchAllNext initial.nextToken
   let
     all :: Array (Array (Either String PriceList))
