@@ -6,14 +6,12 @@ module AWS.Pricing
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (handleError, unfoldrM1)
 import AWS.Pricing.Types (Filter, PriceList, ServiceCode, GetProductsResponse)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json, decodeJson)
-import Data.Array (concat)
 import Data.Bifunctor (lmap)
 import Data.Either (Either)
 import Data.Function.Uncurried (Fn5, runFn5)
@@ -95,10 +93,9 @@ getAllProducts ::
   Array Filter ->
   ServiceCode ->
   Maybe String ->
-  Maybe Number ->
   Aff (Array (Either String PriceList))
-getAllProducts api filters serviceCode token max = do
-  initial :: GetProductsResponse <- getProducts api filters serviceCode token max
+getAllProducts api filters serviceCode token = do
+  initial :: GetProductsResponse <- getProducts api filters serviceCode token Nothing
   next :: Array (Array (Either String PriceList)) <- fetchAllNext initial.nextToken
   let
     all :: Array (Array (Either String PriceList))
@@ -106,13 +103,12 @@ getAllProducts api filters serviceCode token max = do
 
     allFlatten :: Array (Either String PriceList)
     allFlatten = all # join
-
   pure allFlatten
   where
   -- func
   getProductsAndNextToken :: String -> Aff (Tuple (Array (Either String PriceList)) (Maybe String))
   getProductsAndNextToken currentNextToken = do
-    products <- getProducts api filters serviceCode (Just currentNextToken) max
+    products <- getProducts api filters serviceCode (Just currentNextToken) Nothing
     let
       nextToken = products.nextToken
 

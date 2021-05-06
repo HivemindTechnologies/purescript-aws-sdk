@@ -35,15 +35,25 @@ handleError = show
 -- | and at the second element the element which needs to be passed on (if there is any of course).
 -- | The first element of the result tuple will be accumlated with the other results and returned at the end.
 -- | and wrapped in `ls`.
-unfoldrM1 :: forall m ls a b. Monad m => Monoid (m a) => Applicative ls => Monoid (ls b) => Maybe a -> (a -> m (Tuple b (Maybe a))) -> m (ls b)
-unfoldrM1 initial fun = do
+-- foldRecM :: forall m a b. MonadRec m => (b -> a -> m b) -> b -> Array a -> m b
+unfoldrM1 ::
+  forall m ls a b.
+  Monad m =>
+  Monoid (m a) =>
+  Applicative ls =>
+  Monoid (ls b) =>
+  Maybe a ->
+  (a -> m (Tuple b (Maybe a))) ->
+  m (ls b)
+unfoldrM1 initialMaybeToken func = do
   let
-    rec (resSoFar :: ls b) possibleValue = do
-      case possibleValue of
+    rec (resSoFar :: ls b) maybeToken = do
+      case maybeToken of
         Just newValue -> do
-          res :: Tuple b (Maybe a) <- fun newValue
+          res :: Tuple b (Maybe a) <- func newValue
           let
+            newResSoFar :: ls b
             newResSoFar = resSoFar <> (pure $ fst res)
           rec newResSoFar $ snd res
         Nothing -> pure resSoFar
-  rec mempty initial
+  rec mempty initialMaybeToken

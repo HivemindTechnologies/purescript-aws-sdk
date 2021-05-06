@@ -49,6 +49,7 @@ type Product r
 
 type PriceDimension r
   = { description :: String
+    , unit :: String
     , pricePerUnit :: { "USD" :: String }
     | r
     }
@@ -63,21 +64,30 @@ derive instance ntPriceDimensions :: Newtype PriceDimensions _
 instance priceDimensionsDecoder :: DecodeJson PriceDimensions where
   decodeJson = decodeAsMap >>> map PriceDimensions
 
+newtype OnDemand
+  = OnDemand (Map.Map String (PriceDetails ()))
+
+derive newtype instance showOnDemand :: Show OnDemand
+
+derive instance ntOnDemand :: Newtype OnDemand _
+
+instance onDemandDecoder :: DecodeJson OnDemand where
+  decodeJson = decodeAsMap >>> map OnDemand
+
 type PriceDetails r
-  = { priceDimensions :: PriceDimensions | r }
+  = { priceDimensions :: PriceDimensions
+    , effectiveDate :: String
+    | r
+    }
 
-newtype OnDemandPrice
-  = OnDemandPrice (Map.Map String (PriceDetails ()))
-
-derive newtype instance showOnDemandPrice :: Show OnDemandPrice
-
-derive instance ntOnDemandPrice :: Newtype OnDemandPrice _
-
-instance onDemandPriceDecoder :: DecodeJson OnDemandPrice where
-  decodeJson = decodeAsMap >>> map OnDemandPrice
-
+-- there is alos "Reserved" prices
+-- but at the time of writing we don't need that information
+-- type Terms r
+--   = { "OnDemand" :: OnDemandPrice | r }
 type Terms r
-  = { "OnDemand" :: OnDemandPrice | r }
+  = { "OnDemand" :: OnDemand
+    | r
+    }
 
 type PriceList
   = { serviceCode :: String
