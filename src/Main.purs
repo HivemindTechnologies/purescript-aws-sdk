@@ -9,7 +9,8 @@ import AWS.EC2.Types (Attribute(..))
 import AWS.ECS (describeClusters, describeContainerInstances, describeTasks, listClusters, listContainerInstances, listTasks)
 import AWS.ECS as ECS
 import AWS.ECS.Types (ClusterArn(..), ContainerInstanceArn(..), TaskArn(..), Tasks)
-import AWS.Pricing (getAllProducts, getProducts)
+-- import AWS.Pricing (getAllProducts, getProducts)
+import AWS.Pricing (getProducts)
 import AWS.Pricing as Pricing
 import AWS.Pricing.Types (FilterField(..), FilterType(..), FilterValue(..), ServiceCode(..))
 import Control.Promise (fromAff)
@@ -49,15 +50,10 @@ main = do
       -- res <- listContainerInstances ecs (ClusterArn "arn:aws:ecs:eu-central-1:677840207937:cluster/cbis-production-microservices")
       -- res <- describeClusters ecs [ClusterArn "arn:aws:ecs:eu-central-1:677840207937:cluster/cbis-production-microservices"]
       -- res <- describeContainerInstances ecs (ClusterArn "arn:aws:ecs:eu-central-1:677840207937:cluster/cbis-production-microservices")  [ContainerInstanceArn "arn:aws:ecs:eu-central-1:677840207937:container-instance/cbis-production-microservices/59f156757059479f8c1a8a742174c15c"]
-      -- res <- getProducts pricing [ filter1, filter2 ] (ServiceCode "AmazonEC2") Nothing (Just 3.0)
-      res <- getAllProducts pricing [ filter1, filter2 ] (ServiceCode "AmazonEC2") Nothing Nothing
-      -- let 
-      --   arr :: Array String
-      --   arr = res.priceList
-      --   bla :: String
-      --   bla = "wefwe"
+      res <- getProducts pricing [ filter1, filter2 ] (ServiceCode "AmazonEC2") Nothing (Just 1.0)
+      -- res <- getAllProducts pricing [ filter1, filter2 ] (ServiceCode "AmazonEC2") Nothing Nothing
       _ <- log $ show res
-      -- _ <- log "bla"
+      -- _ <- log $ show res
       -- _ <- case res of
       --   Left e -> log e
       --   Right r -> log $ show r
