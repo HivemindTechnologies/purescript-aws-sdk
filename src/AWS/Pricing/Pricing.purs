@@ -9,7 +9,7 @@ import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (handleError, unfoldrM1)
-import AWS.Pricing.Types (Filter, GetProductsResponse, OnDemand, OnDemandA(..), PriceDetails, PriceDetailsA, PriceDimension, PriceDimensionA, PriceDimensions, PriceDimensionsA(..), PriceList, PriceListA, ServiceCode, Terms, TermsA, toUnit)
+import AWS.Pricing.Types (Filter, GetProductsResponse, OnDemand, OnDemandA(..), PriceDetails, PriceDetailsA, PriceDimension, PriceDimensionA, PriceDimensionsA(..), PriceList, PriceListA, ServiceCode, Terms, TermsA, toUnit)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json, decodeJson)
 import Data.Bifunctor (lmap)
@@ -17,10 +17,7 @@ import Data.DateTime (DateTime)
 import Data.Either (Either, hush)
 import Data.Formatter.DateTime (unformatDateTime)
 import Data.Function.Uncurried (Fn5, runFn5)
-import Data.Map (toUnfoldable)
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
@@ -80,10 +77,16 @@ getProducts pricing filters serviceCode token max =
   toPriceList :: Json -> Either String PriceList
   toPriceList = decodeJson <#> lmap handleError
 
+  toPLA :: Either String PriceList -> Either String PriceListA
+  toPLA e = e <#> toPriceListA
+
+  foo :: Json -> Either String PriceListA
+  foo = toPriceList >>> toPLA
+
   toResponse :: InternalGetProductsResponse -> GetProductsResponse
   toResponse internal =
     { formatVersion: internal."FormatVersion"
-    , priceList: internal."PriceList" <#> toPriceList
+    , priceList: internal."PriceList" <#> foo
     , nextToken: Nullable.toMaybe internal."NextToken"
     }
 
@@ -97,20 +100,20 @@ getAllProducts ::
   Pricing ->
   Array Filter ->
   ServiceCode ->
-  Aff (Array (Either String PriceList))
+  Aff (Array (Either String PriceListA))
 getAllProducts api filters serviceCode = do
   initial :: GetProductsResponse <- getProducts api filters serviceCode Nothing Nothing
-  next :: Array (Array (Either String PriceList)) <- fetchAllNext initial.nextToken
+  next :: Array (Array (Either String PriceListA)) <- fetchAllNext initial.nextToken
   let
-    all :: Array (Array (Either String PriceList))
+    all :: Array (Array (Either String PriceListA))
     all = pure initial.priceList <> next
 
-    allFlatten :: Array (Either String PriceList)
+    allFlatten :: Array (Either String PriceListA)
     allFlatten = all # join
   pure allFlatten
   where
   -- func
-  getProductsAndNextToken :: String -> Aff (Tuple (Array (Either String PriceList)) (Maybe String))
+  getProductsAndNextToken :: String -> Aff (Tuple (Array (Either String PriceListA)) (Maybe String))
   getProductsAndNextToken currentNextToken = do
     products <- getProducts api filters serviceCode (Just currentNextToken) Nothing
     let
@@ -119,15 +122,8 @@ getAllProducts api filters serviceCode = do
       priceList = products.priceList
     pure $ Tuple priceList nextToken
 
-  fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceList)))
+  fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceListA)))
   fetchAllNext token = unfoldrM1 token getProductsAndNextToken
-
-toPriceDimensionA :: PriceDimension () -> PriceDimensionA
-toPriceDimensionA priceDimension =
-  { description: priceDimension.description
-  , unit: toUnit priceDimension.unit
-  , pricePerUnit: priceDimension.pricePerUnit
-  }
 
 toPriceListA :: PriceList -> PriceListA
 toPriceListA pl =
@@ -148,29 +144,17 @@ toPriceDetailsA :: PriceDetails () -> PriceDetailsA
 toPriceDetailsA priceDetails =
   { priceDimensions:
       (unwrap priceDetails.priceDimensions)
-        <#> ( \pd ->
-              { description: pd.description
-              , unit: toUnit pd.unit
-              , pricePerUnit: pd.pricePerUnit
-              }
-          )
+        <#> toPriceDimensionA
         # PriceDimensionsA
   , effectiveDate: hush $ parseDateTime priceDetails.effectiveDate
   }
 
+toPriceDimensionA :: PriceDimension () -> PriceDimensionA
+toPriceDimensionA priceDimension =
+  { description: priceDimension.description
+  , unit: toUnit priceDimension.unit
+  , pricePerUnit: priceDimension.pricePerUnit
+  }
+
 parseDateTime :: String -> Either String DateTime
 parseDateTime = unformatDateTime "YYYY-MM-DDTHH:mm:ssZ"
-
-----
--- type Foo r
---   = { description :: String
---     , unit :: Int
---     | r
---     }
--- newtype FooA
---   = FooA (Map.Map String (Foo ()))
--- derive instance ntFooA :: Newtype FooA _
--- x :: FooA -> FooA
--- x foo = fooo <#> (\f -> {description : f.description, unit : 3}) # FooA
---   where
---     fooo = unwrap foo
