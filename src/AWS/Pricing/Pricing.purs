@@ -9,13 +9,18 @@ import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (handleError, unfoldrM1)
-import AWS.Pricing.Types (Filter, PriceList, ServiceCode, GetProductsResponse)
+import AWS.Pricing.Types (Filter, GetProductsResponse, OnDemand, OnDemandA(..), PriceDetails, PriceDetailsA, PriceDimension, PriceDimensionA, PriceDimensions, PriceDimensionsA(..), PriceList, PriceListA, ServiceCode, Terms, TermsA, toUnit)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json, decodeJson)
 import Data.Bifunctor (lmap)
-import Data.Either (Either)
+import Data.DateTime (DateTime)
+import Data.Either (Either, hush)
+import Data.Formatter.DateTime (unformatDateTime)
 import Data.Function.Uncurried (Fn5, runFn5)
+import Data.Map (toUnfoldable)
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype)
 import Data.Newtype (unwrap)
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
@@ -116,3 +121,56 @@ getAllProducts api filters serviceCode = do
 
   fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceList)))
   fetchAllNext token = unfoldrM1 token getProductsAndNextToken
+
+toPriceDimensionA :: PriceDimension () -> PriceDimensionA
+toPriceDimensionA priceDimension =
+  { description: priceDimension.description
+  , unit: toUnit priceDimension.unit
+  , pricePerUnit: priceDimension.pricePerUnit
+  }
+
+toPriceListA :: PriceList -> PriceListA
+toPriceListA pl =
+  { serviceCode: pl.serviceCode
+  , version: pl.version
+  , publicationDate: pl.publicationDate
+  , product: pl.product
+  , terms: toTermsA pl.terms
+  }
+
+toTermsA :: Terms () -> TermsA
+toTermsA terms = { "OnDemand": toOnDemandA terms."OnDemand" }
+
+toOnDemandA :: OnDemand -> OnDemandA
+toOnDemandA onDemand = (unwrap onDemand) <#> toPriceDetailsA # OnDemandA
+
+toPriceDetailsA :: PriceDetails () -> PriceDetailsA
+toPriceDetailsA priceDetails =
+  { priceDimensions:
+      (unwrap priceDetails.priceDimensions)
+        <#> ( \pd ->
+              { description: pd.description
+              , unit: toUnit pd.unit
+              , pricePerUnit: pd.pricePerUnit
+              }
+          )
+        # PriceDimensionsA
+  , effectiveDate: hush $ parseDateTime priceDetails.effectiveDate
+  }
+
+parseDateTime :: String -> Either String DateTime
+parseDateTime = unformatDateTime "YYYY-MM-DDTHH:mm:ssZ"
+
+----
+-- type Foo r
+--   = { description :: String
+--     , unit :: Int
+--     | r
+--     }
+-- newtype FooA
+--   = FooA (Map.Map String (Foo ()))
+-- derive instance ntFooA :: Newtype FooA _
+-- x :: FooA -> FooA
+-- x foo = fooo <#> (\f -> {description : f.description, unit : 3}) # FooA
+--   where
+--     fooo = unwrap foo
