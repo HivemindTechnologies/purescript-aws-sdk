@@ -149,6 +149,8 @@ instance showUnit :: Show Unit where
   show Hours = "Hrs"
   show Quantity = "Quantity"
 
+derive instance eqUnit :: Eq Unit
+
 toUnit :: String -> Unit
 toUnit unit = case unit of
   "Hrs" -> Hours
