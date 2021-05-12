@@ -133,25 +133,25 @@ derive instance ntPriceDimensionsA :: Newtype PriceDimensionsA _
 
 type PriceDimensionA
   = { description :: String
-    , unit :: Unit
+    , unit :: PriceUnit
     , pricePerUnit :: { "USD" :: String }
     }
 
-data Unit
+data PriceUnit
   = Hours
   | Quantity
 
-instance encodeUnit :: EncodeJson Unit where
+instance encodeUnit :: EncodeJson PriceUnit where
   encodeJson Hours = encodeString "Hrs"
   encodeJson Quantity = encodeString "Quantity"
 
-instance showUnit :: Show Unit where
+instance showUnit :: Show PriceUnit where
   show Hours = "Hrs"
   show Quantity = "Quantity"
 
-derive instance eqUnit :: Eq Unit
+derive instance eqUnit :: Eq PriceUnit
 
-toUnit :: String -> Unit
+toUnit :: String -> PriceUnit
 toUnit unit = case unit of
   "Hrs" -> Hours
   "Quantity" -> Quantity

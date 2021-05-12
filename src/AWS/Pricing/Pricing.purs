@@ -6,10 +6,11 @@ module AWS.Pricing
   ) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (handleError, unfoldrM1)
-import AWS.Pricing.Types (Filter, GetProductsResponse, OnDemand, OnDemandA(..), PriceDetails, PriceDetailsA, PriceDimension, PriceDimensionA, PriceDimensionsA(..), PriceList, PriceListA, ServiceCode, Terms, TermsA, toUnit)
+import AWS.Pricing.Types (Filter, GetProductsResponse, OnDemand, OnDemandA(..), PriceDetails, PriceDetailsA, PriceDimension, PriceDimensionA, PriceDimensionsA(..), PriceList, ServiceCode, Terms, TermsA, PriceListA, toUnit)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json, decodeJson)
 import Data.Bifunctor (lmap)
@@ -74,21 +75,18 @@ getProducts pricing filters serviceCode token max =
     , "Value": unwrap filter.value
     }
 
-  toPriceList :: Json -> Either String PriceList
-  toPriceList = decodeJson <#> lmap handleError
-
-  toPLA :: Either String PriceList -> Either String PriceListA
-  toPLA e = e <#> toPriceListA
-
-  foo :: Json -> Either String PriceListA
-  foo = toPriceList >>> toPLA
-
   toResponse :: InternalGetProductsResponse -> GetProductsResponse
   toResponse internal =
     { formatVersion: internal."FormatVersion"
-    , priceList: internal."PriceList" <#> foo
+    , priceList: internal."PriceList" <#> toPriceList >>> toPLA
     , nextToken: Nullable.toMaybe internal."NextToken"
     }
+
+toPriceList :: Json -> Either String PriceList
+toPriceList  = decodeJson <#> lmap handleError 
+
+toPLA :: Either String PriceList -> Either String PriceListA
+toPLA e = e <#> toPriceListA
 
 type InternalGetProductsResponse
   = { "FormatVersion" :: String
