@@ -1,4 +1,4 @@
-module Main where
+module MainTemp where
 
 import Prelude
 import AWS.Core.Types (InstanceId(..), Region(..))
@@ -21,8 +21,8 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Class.Console (logShow, log)
 
-main :: Effect Unit
-main = do
+mainTemp :: Effect Unit
+mainTemp = do
   ec2 <- EC2.newEC2 $ encodeJson {}
   ecs <- ECS.newECS $ encodeJson {}
   pricing <- Pricing.makeClient { region: Region "us-east-1" }
