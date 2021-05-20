@@ -40,7 +40,7 @@ derive instance ntServiceCode :: Newtype ServiceCode _
 
 type GetProductsResponse
   = { formatVersion :: String
-    , priceList :: Array (Either String PriceListA)
+    , priceList :: Array (Either String PriceList)
     , nextToken :: Maybe String
     }
 
@@ -50,46 +50,53 @@ type Attributes r
 type Product r
   = { attributes :: Attributes () | r }
 
-type PriceDimension r
+type InternalPriceDimension r
   = { description :: String
     , unit :: String
     , pricePerUnit :: { "USD" :: String }
     | r
     }
 
-newtype PriceDimensions
-  = PriceDimensions (Map.Map String (PriceDimension ()))
+newtype InternalPriceDimensions
+  = InternalPriceDimensions (Map.Map String (InternalPriceDimension ()))
 
-derive newtype instance showPriceDimensions :: Show PriceDimensions
+derive newtype instance showPriceDimensions :: Show InternalPriceDimensions
 
-derive instance ntPriceDimensions :: Newtype PriceDimensions _
+derive instance ntPriceDimensions :: Newtype InternalPriceDimensions _
 
-instance priceDimensionsDecoder :: DecodeJson PriceDimensions where
-  decodeJson = decodeAsMap >>> map PriceDimensions
+instance priceDimensionsDecoder :: DecodeJson InternalPriceDimensions where
+  decodeJson = decodeAsMap >>> map InternalPriceDimensions
 
-newtype OnDemand
-  = OnDemand (Map.Map String (PriceDetails ()))
+newtype InternalOnDemand
+  = InternalOnDemand (Map.Map String (InternalPriceDetails ()))
 
-derive newtype instance showOnDemand :: Show OnDemand
+derive newtype instance showOnDemand :: Show InternalOnDemand
 
-derive instance ntOnDemand :: Newtype OnDemand _
+derive instance ntOnDemand :: Newtype InternalOnDemand _
 
-instance onDemandDecoder :: DecodeJson OnDemand where
-  decodeJson = decodeAsMap >>> map OnDemand
+instance onDemandDecoder :: DecodeJson InternalOnDemand where
+  decodeJson = decodeAsMap >>> map InternalOnDemand
 
-type PriceDetails r
-  = { priceDimensions :: PriceDimensions
+type InternalPriceDetails r
+  = { priceDimensions :: InternalPriceDimensions
     , effectiveDate :: String
     | r
     }
 
 -- there is alos "Reserved" prices
 -- but at the time of writing we don't need that information
--- type Terms r
---   = { "OnDemand" :: OnDemandPrice | r }
-type Terms r
-  = { "OnDemand" :: OnDemand
+-- type InternalTerms r
+type InternalTerms r
+  = { "OnDemand" :: InternalOnDemand
     | r
+    }
+
+type InternalPriceList
+  = { serviceCode :: String
+    , version :: String
+    , publicationDate :: String
+    , product :: Product ()
+    , terms :: InternalTerms ()
     }
 
 type PriceList
@@ -97,41 +104,32 @@ type PriceList
     , version :: String
     , publicationDate :: String
     , product :: Product ()
-    , terms :: Terms ()
+    , terms :: Terms
     }
 
-------
-type PriceListA
-  = { serviceCode :: String
-    , version :: String
-    , publicationDate :: String
-    , product :: Product ()
-    , terms :: TermsA
-    }
+type Terms
+  = { "OnDemand" :: OnDemand }
 
-type TermsA
-  = { "OnDemand" :: OnDemandA }
+newtype OnDemand
+  = OnDemand (Map.Map String PriceDetails)
 
-newtype OnDemandA
-  = OnDemandA (Map.Map String PriceDetailsA)
+derive newtype instance showOnDemandA :: Show OnDemand
 
-derive newtype instance showOnDemandA :: Show OnDemandA
+derive instance ntOnDemandA :: Newtype OnDemand _
 
-derive instance ntOnDemandA :: Newtype OnDemandA _
-
-type PriceDetailsA
-  = { priceDimensions :: PriceDimensionsA
+type PriceDetails
+  = { priceDimensions :: PriceDimensions
     , effectiveDate :: Maybe DateTime
     }
 
-newtype PriceDimensionsA
-  = PriceDimensionsA (Map.Map String PriceDimensionA)
+newtype PriceDimensions
+  = PriceDimensions (Map.Map String PriceDimension)
 
-derive newtype instance showPriceDimensionsA :: Show PriceDimensionsA
+derive newtype instance showPriceDimensionsA :: Show PriceDimensions
 
-derive instance ntPriceDimensionsA :: Newtype PriceDimensionsA _
+derive instance ntPriceDimensionsA :: Newtype PriceDimensions _
 
-type PriceDimensionA
+type PriceDimension
   = { description :: String
     , unit :: PriceUnit
     , pricePerUnit :: { "USD" :: String }

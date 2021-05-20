@@ -6,17 +6,14 @@ module AWS.Pricing
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
-import AWS.Core.Util (handleError, unfoldrM1)
-import AWS.Pricing.Types (Filter, GetProductsResponse, OnDemand, OnDemandA(..), PriceDetails, PriceDetailsA, PriceDimension, PriceDimensionA, PriceDimensionsA(..), PriceList, ServiceCode, Terms, TermsA, PriceListA, toUnit)
+import AWS.Core.Util (unfoldrM1)
+import AWS.Pricing.Types (Filter, GetProductsResponse, PriceList, ServiceCode)
+import AWS.Pricing.Utils (parsePriceList)
 import Control.Promise (Promise, toAffE)
-import Data.Argonaut (Json, decodeJson)
-import Data.Bifunctor (lmap)
-import Data.DateTime (DateTime)
-import Data.Either (Either, hush)
-import Data.Formatter.DateTime (unformatDateTime)
+import Data.Argonaut (Json)
+import Data.Either (Either)
 import Data.Function.Uncurried (Fn5, runFn5)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
@@ -54,9 +51,28 @@ type InternalFilter
     , "Value" :: String
     }
 
-foreign import getProductsImpl :: Fn5 Pricing (Array InternalFilter) String (Nullable String) (Nullable Number) (Effect (Promise InternalGetProductsResponse))
+type InternalGetProductsResponse
+  = { "FormatVersion" :: String
+    , "PriceList" :: Array Json
+    , "NextToken" :: Nullable String
+    }
 
-getProducts :: Pricing -> Array Filter -> ServiceCode -> Maybe String -> Maybe Number -> Aff (GetProductsResponse)
+foreign import getProductsImpl ::
+  Fn5
+    Pricing
+    (Array InternalFilter)
+    String
+    (Nullable String)
+    (Nullable Number)
+    (Effect (Promise InternalGetProductsResponse))
+
+getProducts ::
+  Pricing ->
+  Array Filter ->
+  ServiceCode ->
+  Maybe String ->
+  Maybe Number ->
+  Aff (GetProductsResponse)
 getProducts pricing filters serviceCode token max =
   ( toAffE
       $ runFn5 getProductsImpl
@@ -78,40 +94,34 @@ getProducts pricing filters serviceCode token max =
   toResponse :: InternalGetProductsResponse -> GetProductsResponse
   toResponse internal =
     { formatVersion: internal."FormatVersion"
-    , priceList: internal."PriceList" <#> toPriceList >>> toPLA
+    , priceList: internal."PriceList" <#> parsePriceList
     , nextToken: Nullable.toMaybe internal."NextToken"
-    }
-
-toPriceList :: Json -> Either String PriceList
-toPriceList  = decodeJson <#> lmap handleError 
-
-toPLA :: Either String PriceList -> Either String PriceListA
-toPLA e = e <#> toPriceListA
-
-type InternalGetProductsResponse
-  = { "FormatVersion" :: String
-    , "PriceList" :: Array Json
-    , "NextToken" :: Nullable String
     }
 
 getAllProducts ::
   Pricing ->
   Array Filter ->
   ServiceCode ->
-  Aff (Array (Either String PriceListA))
+  Aff (Array (Either String PriceList))
 getAllProducts api filters serviceCode = do
   initial :: GetProductsResponse <- getProducts api filters serviceCode Nothing Nothing
-  next :: Array (Array (Either String PriceListA)) <- fetchAllNext initial.nextToken
+  next :: Array (Array (Either String PriceList)) <- fetchAllNext initial.nextToken
   let
-    all :: Array (Array (Either String PriceListA))
+    all :: Array (Array (Either String PriceList))
     all = pure initial.priceList <> next
 
-    allFlatten :: Array (Either String PriceListA)
+    allFlatten :: Array (Either String PriceList)
     allFlatten = all # join
   pure allFlatten
   where
   -- func
-  getProductsAndNextToken :: String -> Aff (Tuple (Array (Either String PriceListA)) (Maybe String))
+  getProductsAndNextToken ::
+    String ->
+    Aff
+      ( Tuple
+          (Array (Either String PriceList))
+          (Maybe String)
+      )
   getProductsAndNextToken currentNextToken = do
     products <- getProducts api filters serviceCode (Just currentNextToken) Nothing
     let
@@ -120,39 +130,5 @@ getAllProducts api filters serviceCode = do
       priceList = products.priceList
     pure $ Tuple priceList nextToken
 
-  fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceListA)))
+  fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceList)))
   fetchAllNext token = unfoldrM1 token getProductsAndNextToken
-
-toPriceListA :: PriceList -> PriceListA
-toPriceListA pl =
-  { serviceCode: pl.serviceCode
-  , version: pl.version
-  , publicationDate: pl.publicationDate
-  , product: pl.product
-  , terms: toTermsA pl.terms
-  }
-
-toTermsA :: Terms () -> TermsA
-toTermsA terms = { "OnDemand": toOnDemandA terms."OnDemand" }
-
-toOnDemandA :: OnDemand -> OnDemandA
-toOnDemandA onDemand = (unwrap onDemand) <#> toPriceDetailsA # OnDemandA
-
-toPriceDetailsA :: PriceDetails () -> PriceDetailsA
-toPriceDetailsA priceDetails =
-  { priceDimensions:
-      (unwrap priceDetails.priceDimensions)
-        <#> toPriceDimensionA
-        # PriceDimensionsA
-  , effectiveDate: hush $ parseDateTime priceDetails.effectiveDate
-  }
-
-toPriceDimensionA :: PriceDimension () -> PriceDimensionA
-toPriceDimensionA priceDimension =
-  { description: priceDimension.description
-  , unit: toUnit priceDimension.unit
-  , pricePerUnit: priceDimension.pricePerUnit
-  }
-
-parseDateTime :: String -> Either String DateTime
-parseDateTime = unformatDateTime "YYYY-MM-DDTHH:mm:ssZ"
