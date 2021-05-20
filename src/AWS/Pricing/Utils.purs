@@ -1,8 +1,9 @@
 module AWS.Pricing.Utils where
 
 import Prelude
+import AWS.Core.Types (Region)
 import AWS.Core.Util (handleError)
-import AWS.Pricing.Types (InternalOnDemand, InternalPriceDetails, InternalPriceDimension, InternalPriceList, InternalTerms, OnDemand(..), PriceDetails, PriceDimension, PriceDimensions(..), PriceList, Terms, toUnit)
+import AWS.Pricing.Types (FilterValue(..), InternalOnDemand, InternalPriceDetails, InternalPriceDimension, InternalPriceList, InternalTerms, OnDemand(..), PriceDetails, PriceDimension, PriceDimensions(..), PriceList, Terms, toUnit)
 import Data.Argonaut (Json, decodeJson)
 import Data.Bifunctor (bimap)
 import Data.DateTime (DateTime)
@@ -46,3 +47,9 @@ parseDateTime = unformatDateTime "YYYY-MM-DDTHH:mm:ssZ"
 
 parsePriceList :: Json -> Either String PriceList
 parsePriceList = decodeJson <#> bimap handleError toPriceList
+
+toLocation :: Region -> FilterValue
+toLocation r = case unwrap r of
+  "eu-central-1" -> FilterValue "EU (Frankfurt)"
+  "eu-west-1" -> FilterValue "EU (Ireland)"
+  _ -> FilterValue "EU (Frankfurt)"
