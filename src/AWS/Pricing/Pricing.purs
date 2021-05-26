@@ -1,16 +1,17 @@
 module AWS.Pricing
   ( Pricing
   , makeClient
-  , getProducts
-  , getAllProducts
+  , getEC2Products
+  , getECSProducts
+  -- , getAllProducts
   ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (unfoldrM1)
-import AWS.Pricing.Types (Filter, GetProductsResponse, PriceList, ServiceCode)
-import AWS.Pricing.Utils (parsePriceList)
+import AWS.Pricing.Types (Filter, GetEC2ProductsResponse, GetECSProductsResponse, EC2PriceList, ServiceCode)
+import AWS.Pricing.Utils (parseEC2PriceList, parseECSPriceList)
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
 import Data.Either (Either)
@@ -66,23 +67,22 @@ foreign import getProductsImpl ::
     (Nullable Number)
     (Effect (Promise InternalGetProductsResponse))
 
-getProducts ::
+curried ::
   Pricing ->
   Array Filter ->
   ServiceCode ->
   Maybe String ->
   Maybe Number ->
-  Aff (GetProductsResponse)
-getProducts pricing filters serviceCode token max =
+  Aff InternalGetProductsResponse
+curried pricing filters serviceCode token max =
   ( toAffE
       $ runFn5 getProductsImpl
           pricing
           (filters <#> toInternalFilter)
-          (unwrap serviceCode)
+          (show serviceCode)
           (Nullable.toNullable token)
           (Nullable.toNullable max)
   )
-    <#> toResponse
   where
   toInternalFilter :: Filter -> InternalFilter
   toInternalFilter filter =
@@ -91,44 +91,66 @@ getProducts pricing filters serviceCode token max =
     , "Value": unwrap filter.value
     }
 
-  toResponse :: InternalGetProductsResponse -> GetProductsResponse
-  toResponse internal =
-    { formatVersion: internal."FormatVersion"
-    , priceList: internal."PriceList" <#> parsePriceList
-    , nextToken: Nullable.toMaybe internal."NextToken"
-    }
-
-getAllProducts ::
+getEC2Products ::
   Pricing ->
   Array Filter ->
   ServiceCode ->
-  Aff (Array (Either String PriceList))
-getAllProducts api filters serviceCode = do
-  initial :: GetProductsResponse <- getProducts api filters serviceCode Nothing Nothing
-  next :: Array (Array (Either String PriceList)) <- fetchAllNext initial.nextToken
-  let
-    all :: Array (Array (Either String PriceList))
-    all = pure initial.priceList <> next
-
-    allFlatten :: Array (Either String PriceList)
-    allFlatten = all # join
-  pure allFlatten
+  Maybe String ->
+  Maybe Number ->
+  Aff GetEC2ProductsResponse
+getEC2Products pricing filters serviceCode token max = curried pricing filters serviceCode token max <#> toResponse
   where
-  -- func
-  getProductsAndNextToken ::
-    String ->
-    Aff
-      ( Tuple
-          (Array (Either String PriceList))
-          (Maybe String)
-      )
-  getProductsAndNextToken currentNextToken = do
-    products <- getProducts api filters serviceCode (Just currentNextToken) Nothing
-    let
-      nextToken = products.nextToken
+  toResponse :: InternalGetProductsResponse -> GetEC2ProductsResponse
+  toResponse internal =
+    { formatVersion: internal."FormatVersion"
+    , priceList: internal."PriceList" <#> parseEC2PriceList
+    , nextToken: Nullable.toMaybe internal."NextToken"
+    }
 
-      priceList = products.priceList
-    pure $ Tuple priceList nextToken
+getECSProducts ::
+  Pricing ->
+  Array Filter ->
+  ServiceCode ->
+  Maybe String ->
+  Maybe Number ->
+  Aff GetECSProductsResponse
+getECSProducts pricing filters serviceCode token max = curried pricing filters serviceCode token max <#> toResponse
+  where
+  toResponse :: InternalGetProductsResponse -> GetECSProductsResponse
+  toResponse internal =
+    { formatVersion: internal."FormatVersion"
+    , priceList: internal."PriceList" <#> parseECSPriceList
+    , nextToken: Nullable.toMaybe internal."NextToken"
+    }
 
-  fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceList)))
-  fetchAllNext token = unfoldrM1 token getProductsAndNextToken
+-- getAllProducts ::
+--   Pricing ->
+--   Array Filter ->
+--   ServiceCode ->
+--   Aff (Array (Either String PriceList))
+-- getAllProducts api filters serviceCode = do
+--   initial :: GetEC2ProductsResponse <- getEC2Products api filters serviceCode Nothing Nothing
+--   next :: Array (Array (Either String PriceList)) <- fetchAllNext initial.nextToken
+--   let
+--     all :: Array (Array (Either String PriceList))
+--     all = pure initial.priceList <> next
+--     allFlatten :: Array (Either String PriceList)
+--     allFlatten = all # join
+--   pure allFlatten
+--   where
+--   -- func
+--   getProductsAndNextToken ::
+--     String ->
+--     Aff
+--       ( Tuple
+--           (Array (Either String PriceList))
+--           (Maybe String)
+--       )
+--   getProductsAndNextToken currentNextToken = do
+--     products <- getEC2Products api filters serviceCode (Just currentNextToken) Nothing
+--     let
+--       nextToken = products.nextToken
+--       priceList = products.priceList
+--     pure $ Tuple priceList nextToken
+--   fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceList)))
+--   fetchAllNext token = unfoldrM1 token getProductsAndNextToken

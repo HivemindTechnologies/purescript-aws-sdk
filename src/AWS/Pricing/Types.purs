@@ -10,6 +10,7 @@ import Data.Either (Either)
 import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
+import Data.Argonaut (Json)
 
 data FilterType
   = TERM_MATCH
@@ -33,22 +34,59 @@ type Filter
     , value :: FilterValue
     }
 
-newtype ServiceCode
-  = ServiceCode String
+-- newtype ServiceCode
+--   = ServiceCode String
+-- derive instance ntServiceCode :: Newtype ServiceCode _
+data ServiceCode
+  = AmazonEC2
+  | AmazonECS
 
-derive instance ntServiceCode :: Newtype ServiceCode _
+instance showServiceCode :: Show ServiceCode where
+  show AmazonEC2 = "AmazonEC2"
+  show AmazonECS = "AmazonECS"
 
-type GetProductsResponse
+type GetEC2ProductsResponse
   = { formatVersion :: String
-    , priceList :: Array (Either String PriceList)
+    , priceList :: Array (Either String EC2PriceList)
     , nextToken :: Maybe String
     }
 
+type GetECSProductsResponse
+  = { formatVersion :: String
+    , priceList :: Array (Either String ECSPriceList)
+    , nextToken :: Maybe String
+    }
+
+-- type InternalAttributes r
+--   = { servicecode :: String | r }
 type Attributes r
   = { instanceType :: String | r }
 
-type Product r
-  = { attributes :: Attributes () | r }
+type EC2Attributes r
+  = { instanceType :: String
+    , instanceFamily :: String
+    , operatingSystem :: String
+    , vcpu :: String
+    | r
+    }
+
+type ECSAttributes r
+  = { servicecode :: String
+    , usagetype :: String
+    , servicename :: String
+    , operation :: String
+    , storagetype :: String
+    | r
+    }
+
+type InternalProduct
+  = { attributes :: Json }
+
+type EC2Product r
+  = { attributes :: EC2Attributes () | r }
+
+type ECSProduct r
+  = { attributes :: ECSAttributes () | r }
 
 type InternalPriceDimension r
   = { description :: String
@@ -95,15 +133,23 @@ type InternalPriceList
   = { serviceCode :: String
     , version :: String
     , publicationDate :: String
-    , product :: Product ()
+    , product :: InternalProduct
     , terms :: InternalTerms ()
     }
 
-type PriceList
+type EC2PriceList
   = { serviceCode :: String
     , version :: String
     , publicationDate :: String
-    , product :: Product ()
+    , product :: EC2Product ()
+    , terms :: Terms
+    }
+
+type ECSPriceList
+  = { serviceCode :: String
+    , version :: String
+    , publicationDate :: String
+    , product :: ECSProduct ()
     , terms :: Terms
     }
 
