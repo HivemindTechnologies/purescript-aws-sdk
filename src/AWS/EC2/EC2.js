@@ -10,3 +10,6 @@ exports.describeInstancesImpl = (ec2) =>
 
 exports.describeTagsImpl = (ec2, filters) =>
   () => ec2.describeTags({ Filters: filters }).promise()
+
+exports.describeInstanceAttributeImpl = (ec2, attribute, instanceId) =>
+  () => ec2.describeInstanceAttribute({ Attribute: attribute, InstanceId: instanceId }).promise()
