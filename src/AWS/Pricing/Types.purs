@@ -6,7 +6,6 @@ import Data.Argonaut (class DecodeJson, Json)
 import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.DateTime (DateTime)
-import Data.Either (Either)
 import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
@@ -41,44 +40,8 @@ instance showServiceCode :: Show ServiceCode where
   show AmazonEC2 = "AmazonEC2"
   show AmazonECS = "AmazonECS"
 
-type GetEC2ProductsResponse
-  = { formatVersion :: String
-    , priceList :: Array (Either String EC2PriceList)
-    , nextToken :: Maybe String
-    }
-
-type GetECSProductsResponse
-  = { formatVersion :: String
-    , priceList :: Array (Either String ECSPriceList)
-    , nextToken :: Maybe String
-    }
-
-type EC2Attributes r
-  = { instanceType :: String
-    , instanceFamily :: String
-    , operatingSystem :: String
-    , vcpu :: String
-    , servicename :: String
-    | r
-    }
-
-type ECSAttributes r
-  = { servicecode :: String
-    , usagetype :: String
-    , servicename :: String
-    , operation :: String
-    -- , storagetype :: String -- not always present
-    | r
-    }
-
 type InternalProduct
   = { attributes :: Json }
-
-type EC2Product r
-  = { attributes :: (Either String (EC2Attributes ())) | r }
-
-type ECSProduct r
-  = { attributes :: (Either String (ECSAttributes ())) | r }
 
 type InternalPriceDimension r
   = { description :: String
@@ -129,22 +92,6 @@ type InternalPriceList
     , terms :: InternalTerms ()
     }
 
-type EC2PriceList
-  = { serviceCode :: String
-    , version :: String
-    , publicationDate :: String
-    , product :: EC2Product ()
-    , terms :: Terms
-    }
-
-type ECSPriceList
-  = { serviceCode :: String
-    , version :: String
-    , publicationDate :: String
-    , product :: ECSProduct ()
-    , terms :: Terms
-    }
-
 type Terms
   = { "OnDemand" :: OnDemand }
 
@@ -192,13 +139,3 @@ toUnit unit = case unit of
   "Hrs" -> Hours
   "Quantity" -> Quantity
   _ -> Hours
-
-data ECSUsageType
-  = EUC1FargateEphemeralStorageGBHours
-  | EUC1FargateGBHours
-  | EUC1FargatevCPUHoursperCPU
-
-instance showECSUsageType :: Show ECSUsageType where
-  show EUC1FargateEphemeralStorageGBHours = "EUC1-Fargate-EphemeralStorage-GB-Hours"
-  show EUC1FargateGBHours = "EUC1-Fargate-GB-Hours"
-  show EUC1FargatevCPUHoursperCPU = "EUC1-Fargate-vCPU-Hours:perCPU"
