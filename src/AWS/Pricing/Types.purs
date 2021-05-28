@@ -2,7 +2,7 @@ module AWS.Pricing.Types where
 
 import Prelude
 import AWS.Core.Types (decodeAsMap)
-import Data.Argonaut (class DecodeJson)
+import Data.Argonaut (class DecodeJson, Json)
 import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.DateTime (DateTime)
@@ -10,7 +10,6 @@ import Data.Either (Either)
 import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
-import Data.Argonaut (Json)
 
 data FilterType
   = TERM_MATCH
@@ -34,9 +33,6 @@ type Filter
     , value :: FilterValue
     }
 
--- newtype ServiceCode
---   = ServiceCode String
--- derive instance ntServiceCode :: Newtype ServiceCode _
 data ServiceCode
   = AmazonEC2
   | AmazonECS
@@ -57,16 +53,12 @@ type GetECSProductsResponse
     , nextToken :: Maybe String
     }
 
--- type InternalAttributes r
---   = { servicecode :: String | r }
-type Attributes r
-  = { instanceType :: String | r }
-
 type EC2Attributes r
   = { instanceType :: String
     , instanceFamily :: String
     , operatingSystem :: String
     , vcpu :: String
+    , servicename :: String
     | r
     }
 
@@ -75,7 +67,7 @@ type ECSAttributes r
     , usagetype :: String
     , servicename :: String
     , operation :: String
-    , storagetype :: String
+    -- , storagetype :: String -- not always present
     | r
     }
 
@@ -83,10 +75,10 @@ type InternalProduct
   = { attributes :: Json }
 
 type EC2Product r
-  = { attributes :: EC2Attributes () | r }
+  = { attributes :: (Either String (EC2Attributes ())) | r }
 
 type ECSProduct r
-  = { attributes :: ECSAttributes () | r }
+  = { attributes :: (Either String (ECSAttributes ())) | r }
 
 type InternalPriceDimension r
   = { description :: String
@@ -121,7 +113,7 @@ type InternalPriceDetails r
     | r
     }
 
--- there is alos "Reserved" prices
+-- there is also "Reserved" prices
 -- but at the time of writing we don't need that information
 -- type InternalTerms r
 type InternalTerms r

@@ -19,11 +19,13 @@ import AWS.Pricing.Types
   , ECSPriceList
   , EC2Product
   , ECSProduct
+  , EC2Attributes
+  , ECSAttributes
   , Terms
   , toUnit
   )
 import Data.Argonaut (Json, decodeJson)
-import Data.Bifunctor (bimap)
+import Data.Bifunctor (lmap, bimap)
 import Data.DateTime (DateTime)
 import Data.Either (Either, hush)
 import Data.Formatter.DateTime (unformatDateTime)
@@ -52,28 +54,19 @@ toTerms terms = { "OnDemand": toOnDemand terms."OnDemand" }
 
 toEC2Product :: InternalProduct -> EC2Product ()
 toEC2Product internalProduct =
-  { attributes: ec2Attributes
+  { attributes: parseEC2Attributes internalProduct.attributes
   }
   where
-  ec2Attributes =
-    { instanceType: ""
-    , instanceFamily: ""
-    , operatingSystem: ""
-    , vcpu: ""
-    }
+  parseEC2Attributes :: Json -> Either String (EC2Attributes ())
+  parseEC2Attributes = decodeJson <#> lmap handleError
 
 toECSProduct :: InternalProduct -> ECSProduct ()
 toECSProduct internalProduct =
-  { attributes: ecsAttributes
+  { attributes: parseECSAttributes internalProduct.attributes
   }
   where
-  ecsAttributes =
-    { servicecode: ""
-    , usagetype: ""
-    , servicename: ""
-    , operation: ""
-    , storagetype: ""
-    }
+  parseECSAttributes :: Json -> Either String (ECSAttributes ())
+  parseECSAttributes = decodeJson <#> lmap handleError
 
 toOnDemand :: InternalOnDemand -> OnDemand
 toOnDemand onDemand = (unwrap onDemand) <#> toPriceDetails # OnDemand
