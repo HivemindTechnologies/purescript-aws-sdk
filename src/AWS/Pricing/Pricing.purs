@@ -3,7 +3,7 @@ module AWS.Pricing
   , makeClient
   , getEC2Products
   , getECSProducts
-  -- , getAllProducts
+  , getAllEC2Products
   ) where
 
 import Prelude
@@ -123,34 +123,34 @@ getECSProducts pricing filters serviceCode token max = curried pricing filters s
     , nextToken: Nullable.toMaybe internal."NextToken"
     }
 
--- getAllProducts ::
---   Pricing ->
---   Array Filter ->
---   ServiceCode ->
---   Aff (Array (Either String PriceList))
--- getAllProducts api filters serviceCode = do
---   initial :: GetEC2ProductsResponse <- getEC2Products api filters serviceCode Nothing Nothing
---   next :: Array (Array (Either String PriceList)) <- fetchAllNext initial.nextToken
---   let
---     all :: Array (Array (Either String PriceList))
---     all = pure initial.priceList <> next
---     allFlatten :: Array (Either String PriceList)
---     allFlatten = all # join
---   pure allFlatten
---   where
---   -- func
---   getProductsAndNextToken ::
---     String ->
---     Aff
---       ( Tuple
---           (Array (Either String PriceList))
---           (Maybe String)
---       )
---   getProductsAndNextToken currentNextToken = do
---     products <- getEC2Products api filters serviceCode (Just currentNextToken) Nothing
---     let
---       nextToken = products.nextToken
---       priceList = products.priceList
---     pure $ Tuple priceList nextToken
---   fetchAllNext :: Maybe String -> Aff (Array (Array (Either String PriceList)))
---   fetchAllNext token = unfoldrM1 token getProductsAndNextToken
+getAllEC2Products ::
+  Pricing ->
+  Array Filter ->
+  ServiceCode ->
+  Aff (Array (Either String EC2PriceList))
+getAllEC2Products api filters serviceCode = do
+  initial :: GetEC2ProductsResponse <- getEC2Products api filters serviceCode Nothing Nothing
+  next :: Array (Array (Either String EC2PriceList)) <- fetchAllNext initial.nextToken
+  let
+    all :: Array (Array (Either String EC2PriceList))
+    all = pure initial.priceList <> next
+    allFlatten :: Array (Either String EC2PriceList)
+    allFlatten = all # join
+  pure allFlatten
+  where
+  -- func
+  getProductsAndNextToken ::
+    String ->
+    Aff
+      ( Tuple
+          (Array (Either String EC2PriceList))
+          (Maybe String)
+      )
+  getProductsAndNextToken currentNextToken = do
+    products <- getEC2Products api filters serviceCode (Just currentNextToken) Nothing
+    let
+      nextToken = products.nextToken
+      priceList = products.priceList
+    pure $ Tuple priceList nextToken
+  fetchAllNext :: Maybe String -> Aff (Array (Array (Either String EC2PriceList)))
+  fetchAllNext token = unfoldrM1 token getProductsAndNextToken
