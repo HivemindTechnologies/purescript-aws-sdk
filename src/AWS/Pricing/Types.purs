@@ -192,3 +192,13 @@ toUnit unit = case unit of
   "Hrs" -> Hours
   "Quantity" -> Quantity
   _ -> Hours
+
+data ECSUsageType
+  = EUC1FargateEphemeralStorageGBHours
+  | EUC1FargateGBHours
+  | EUC1FargatevCPUHoursperCPU
+
+instance showECSUsageType :: Show ECSUsageType where
+  show EUC1FargateEphemeralStorageGBHours = "EUC1-Fargate-EphemeralStorage-GB-Hours"
+  show EUC1FargateGBHours = "EUC1-Fargate-GB-Hours"
+  show EUC1FargatevCPUHoursperCPU = "EUC1-Fargate-vCPU-Hours:perCPU"

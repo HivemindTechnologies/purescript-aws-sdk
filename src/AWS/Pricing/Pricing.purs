@@ -134,6 +134,7 @@ getAllEC2Products api filters serviceCode = do
   let
     all :: Array (Array (Either String EC2PriceList))
     all = pure initial.priceList <> next
+
     allFlatten :: Array (Either String EC2PriceList)
     allFlatten = all # join
   pure allFlatten
@@ -150,7 +151,9 @@ getAllEC2Products api filters serviceCode = do
     products <- getEC2Products api filters serviceCode (Just currentNextToken) Nothing
     let
       nextToken = products.nextToken
+
       priceList = products.priceList
     pure $ Tuple priceList nextToken
+
   fetchAllNext :: Maybe String -> Aff (Array (Array (Either String EC2PriceList)))
   fetchAllNext token = unfoldrM1 token getProductsAndNextToken
