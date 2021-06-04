@@ -38,3 +38,17 @@ toLocation r = case unwrap r of
   "eu-central-1" -> FilterValue "EU (Frankfurt)"
   "eu-west-1" -> FilterValue "EU (Ireland)"
   _ -> FilterValue "EU (Frankfurt)"
+
+toBoxUsage :: Region -> String -> FilterValue
+toBoxUsage region instanceType = case unwrap region of
+  "eu-central-1" -> FilterValue $ "EUC1-BoxUsage:" <> instanceType
+  "eu-west-1" -> FilterValue $ "EU-BoxUsage:" <> instanceType
+  _ -> FilterValue $ "EUC1-BoxUsage:" <> instanceType
+
+-- "EU-Reservation:"
+-- "EU-UnusedBox:"
+-- "EU-DedicatedRes:"
+-- "EU-BoxUsage:"
+-- "EU-UnusedDed:"
+-- "EU-DedicatedUsage:"
+-- "EU-HostBoxUsage:"
