@@ -10,7 +10,7 @@ import AWS.EC2.Types (Attribute(..))
 import AWS.ECS (describeClusters, describeContainerInstances, describeTasks, listClusters, listContainerInstances, listTasks)
 import AWS.ECS as ECS
 import AWS.ECS.Types (ClusterArn(..), ContainerInstanceArn(..), TaskArn(..), Tasks)
-import AWS.Pricing (getEC2Products, getECSProducts)
+import AWS.Pricing (getAllEC2Products, getEC2Products, getECSProducts)
 import AWS.Pricing as Pricing
 import AWS.Pricing.ECS.Types (ECSUsageType(..))
 import AWS.Pricing.Types (FilterField(..), FilterType(..), FilterValue(..), ServiceCode(..))
@@ -76,7 +76,7 @@ mainTemp = do
       -- res <- describeClusters ecs [ClusterArn "arn:aws:ecs:eu-central-1:677840207937:cluster/cbis-production-microservices"]
       -- res <- describeContainerInstances ecs (ClusterArn "arn:aws:ecs:eu-central-1:677840207937:cluster/cbis-production-microservices")  [ContainerInstanceArn "arn:aws:ecs:eu-central-1:677840207937:container-instance/cbis-production-microservices/59f156757059479f8c1a8a742174c15c"]
   
-      res <- getEC2Products 
+      res <- getAllEC2Products 
         pricing 
         [ 
           filterLocation
@@ -85,9 +85,6 @@ mainTemp = do
           , filterUsagetype
           , filterPreInstalledSw
         ] 
-        AmazonEC2 
-        Nothing 
-        (Just 100.0)
       -- res <- getECSProducts pricing [ filterLocation, filfilterUsageType ] AmazonECS Nothing (Just 10.0)
       _ <- log $ show res
       -- _ <- log $ show res
