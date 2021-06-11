@@ -7,6 +7,7 @@ module AWS.Pricing
   ) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (unfoldrM1)
@@ -15,6 +16,7 @@ import AWS.Pricing.EC2.Utils (parseEC2PriceList)
 import AWS.Pricing.ECS.Types (GetECSProductsResponse)
 import AWS.Pricing.ECS.Utils (parseECSPriceList)
 import AWS.Pricing.Types (Filter, ServiceCode)
+import AWS.Pricing.Types as ServiceCode
 import Control.Promise (Promise, toAffE)
 import Data.Argonaut (Json)
 import Data.Either (Either)
@@ -97,11 +99,10 @@ curried pricing filters serviceCode token max =
 getEC2Products ::
   Pricing ->
   Array Filter ->
-  ServiceCode ->
   Maybe String ->
   Maybe Number ->
   Aff GetEC2ProductsResponse
-getEC2Products pricing filters serviceCode token max = curried pricing filters serviceCode token max <#> toResponse
+getEC2Products pricing filters token max = curried pricing filters ServiceCode.AmazonEC2 token max <#> toResponse
   where
   toResponse :: InternalGetProductsResponse -> GetEC2ProductsResponse
   toResponse internal =
@@ -113,11 +114,10 @@ getEC2Products pricing filters serviceCode token max = curried pricing filters s
 getECSProducts ::
   Pricing ->
   Array Filter ->
-  ServiceCode ->
   Maybe String ->
   Maybe Number ->
   Aff GetECSProductsResponse
-getECSProducts pricing filters serviceCode token max = curried pricing filters serviceCode token max <#> toResponse
+getECSProducts pricing filters token max = curried pricing filters ServiceCode.AmazonECS token max <#> toResponse
   where
   toResponse :: InternalGetProductsResponse -> GetECSProductsResponse
   toResponse internal =
@@ -129,10 +129,9 @@ getECSProducts pricing filters serviceCode token max = curried pricing filters s
 getAllEC2Products ::
   Pricing ->
   Array Filter ->
-  ServiceCode ->
   Aff (Array (Either String EC2PriceList))
-getAllEC2Products api filters serviceCode = do
-  initial :: GetEC2ProductsResponse <- getEC2Products api filters serviceCode Nothing Nothing
+getAllEC2Products api filters = do
+  initial :: GetEC2ProductsResponse <- getEC2Products api filters  Nothing Nothing
   next :: Array (Array (Either String EC2PriceList)) <- fetchAllNext initial.nextToken
   let
     all :: Array (Array (Either String EC2PriceList))
@@ -151,7 +150,7 @@ getAllEC2Products api filters serviceCode = do
           (Maybe String)
       )
   getProductsAndNextToken currentNextToken = do
-    products <- getEC2Products api filters serviceCode (Just currentNextToken) Nothing
+    products <- getEC2Products api filters (Just currentNextToken) Nothing
     let
       nextToken = products.nextToken
 
