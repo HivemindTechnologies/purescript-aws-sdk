@@ -9,12 +9,13 @@ import Justifill.Justifiable (class JustifiableFields)
 import Prelude ((>>>))
 import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
+import Debug.Trace (spy)
 
 makeClientHelper ::
   forall additionalProps client.
   EncodeJson (BasicClientProps additionalProps) =>
   (Json -> Effect client) -> BasicClientProps additionalProps -> Effect client
-makeClientHelper newClient = encodeJson >>> newClient
+makeClientHelper newClient = spy "makeClientHelper: " >>> encodeJson >>> newClient
 
 makeDefaultClient ::
   forall additionalProps output input to toRL inputRL.

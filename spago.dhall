@@ -5,6 +5,7 @@
   , "argonaut-codecs"
   , "console"
   , "datetime"
+  , "debug"
   , "effect"
   , "foreign"
   , "formatters"
