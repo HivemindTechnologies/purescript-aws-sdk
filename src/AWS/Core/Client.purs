@@ -9,7 +9,7 @@ import Justifill.Justifiable (class JustifiableFields)
 import Prelude ((>>>))
 import Prim.Row (class Nub, class Union)
 import Prim.RowList (class RowToList)
-import Debug.Trace (spy)
+import Debug  (spy)
 
 makeClientHelper ::
   forall additionalProps client.
