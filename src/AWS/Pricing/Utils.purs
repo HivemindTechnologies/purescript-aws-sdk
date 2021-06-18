@@ -37,13 +37,13 @@ toLocation :: Region -> FilterValue
 toLocation r = case unwrap r of
   "eu-central-1" -> FilterValue "EU (Frankfurt)"
   "eu-west-1" -> FilterValue "EU (Ireland)"
-  _ -> FilterValue "EU (Frankfurt)"
+  _ -> FilterValue "Unknown region" -- default value or error case?
 
 toBoxUsage :: Region -> String -> FilterValue
 toBoxUsage region instanceType = case unwrap region of
   "eu-central-1" -> FilterValue $ "EUC1-BoxUsage:" <> instanceType
   "eu-west-1" -> FilterValue $ "EU-BoxUsage:" <> instanceType
-  _ -> FilterValue $ "EUC1-BoxUsage:" <> instanceType
+  _ -> FilterValue $ "Unkown region" -- default value or error case?
 
 -- "EU-Reservation:"
 -- "EU-UnusedBox:"
