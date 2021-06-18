@@ -7,7 +7,6 @@ module AWS.Pricing
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps)
 import AWS.Core.Util (unfoldrM1)
@@ -131,7 +130,7 @@ getAllEC2Products ::
   Array Filter ->
   Aff (Array (Either String EC2PriceList))
 getAllEC2Products api filters = do
-  initial :: GetEC2ProductsResponse <- getEC2Products api filters  Nothing Nothing
+  initial :: GetEC2ProductsResponse <- getEC2Products api filters Nothing Nothing
   next :: Array (Array (Either String EC2PriceList)) <- fetchAllNext initial.nextToken
   let
     all :: Array (Array (Either String EC2PriceList))
