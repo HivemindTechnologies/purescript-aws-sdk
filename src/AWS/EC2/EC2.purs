@@ -7,15 +7,22 @@ module AWS.EC2
   , describeTags
   , DescribeTagsResponse
   , Tag
+  , describeInstanceTypeAttribute
+  , newEC2
   ) where
 
 import Prelude
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Instance, InstanceId(..), InstanceType(..))
+import AWS.Core.Util (handleError)
+import AWS.EC2.Types (Attribute, InstanceTypeAttribute)
 import Control.Promise (Promise, toAffE)
 import Control.Promise as Promise
-import Data.Argonaut (Json)
-import Data.Function.Uncurried (Fn1, Fn2, runFn2)
+import Data.Argonaut (Json, decodeJson)
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
+import Data.Function.Uncurried (Fn1, Fn2, Fn3, runFn2, runFn3)
+import Data.Newtype (unwrap)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -192,3 +199,20 @@ describeTags ec2 filters =
 
   toResponse :: InternalDescribeTagsResponse -> DescribeTagsResponse
   toResponse internalRspse = { tags: internalRspse."Tags" <#> toTag }
+
+foreign import describeInstanceAttributeImpl :: Fn3 EC2 String String (Effect (Promise Json))
+
+curriedInstanceAttribute :: EC2 -> Attribute -> InstanceId -> Effect (Promise Json)
+curriedInstanceAttribute ec2 attribute instanceId =
+  runFn3 describeInstanceAttributeImpl
+    ec2
+    (show attribute)
+    (unwrap instanceId)
+
+describeInstanceTypeAttribute :: EC2 -> Attribute -> InstanceId -> Aff (Either String (InstanceTypeAttribute ()))
+describeInstanceTypeAttribute ec2 attribute instanceId =
+  (toAffE $ curriedInstanceAttribute ec2 attribute instanceId)
+    <#> parse
+  where
+  parse :: Json -> Either String (InstanceTypeAttribute ())
+  parse = decodeJson <#> lmap handleError
