@@ -36,32 +36,27 @@ instance showAttribute :: Show Attribute where
   show EnaSupport = "enaSupport"
   show EnclaveOptions = "enclaveOptions"
 
-{- 
-Depending on which Attribute is sent in the request the response can contain different keys 
-Examples: 
+type InstanceAttributeInstanceType
+  = { "InstanceId" :: String
+    , "InstanceType" ::
+        { "Value" :: String
+        }
+    }
 
-with Attribute.KernelId
-{
-  Groups: [],
-  BlockDeviceMappings: [],
-  InstanceId: 'i-xxxxx',
-  KernelId: {},
-  ProductCodes: []
-}
+type VcpuInfo
+  = { "DefaultVCpus" :: Int
+    , "DefaultCores" :: Int
+    , "DefaultThreadsPerCore" :: Int
+    }
 
-with Attribute.InstanceType
-{
-  Groups: [],
-  BlockDeviceMappings: [],
-  InstanceId: 'i-xxxx',
-  InstanceType: { Value: 'm5.2xlarge' },
-  ProductCodes: []
-}
--}
-type Raw a
-  = ( "InstanceId" :: String | a )
+type InstanceTypeParams
+  = { "InstanceType" :: String
+    , "VCpuInfo" :: VcpuInfo
+    , "MemoryInfo" ::
+        { "SizeInMiB" :: Int
+        }
+    }
 
-type InstanceTypeAttribute a
-  = { "InstanceType" :: { "Value" :: String }
-    | Raw a
+type DescribeInstanceTypesResponse
+  = { "InstanceTypes" :: Array InstanceTypeParams
     }
