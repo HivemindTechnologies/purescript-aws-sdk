@@ -7,15 +7,18 @@ module AWS.EC2
   , describeTags
   , DescribeTagsResponse
   , Tag
-  , describeInstanceTypeAttribute
+  , describeInstanceAttributeInstanceType
   , newEC2
+  , describeInstanceTypes
   ) where
 
 import Prelude
+
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Instance, InstanceId(..), InstanceType(..))
 import AWS.Core.Util (handleError)
-import AWS.EC2.Types (Attribute, InstanceTypeAttribute)
+import AWS.EC2.Types (Attribute, InstanceAttributeInstanceType, DescribeInstanceTypesResponse)
+import AWS.EC2.Types (Attribute(..)) as Attribute
 import Control.Promise (Promise, toAffE)
 import Control.Promise as Promise
 import Data.Argonaut (Json, decodeJson)
@@ -209,10 +212,26 @@ curriedInstanceAttribute ec2 attribute instanceId =
     (show attribute)
     (unwrap instanceId)
 
-describeInstanceTypeAttribute :: EC2 -> Attribute -> InstanceId -> Aff (Either String (InstanceTypeAttribute ()))
-describeInstanceTypeAttribute ec2 attribute instanceId =
-  (toAffE $ curriedInstanceAttribute ec2 attribute instanceId)
+describeInstanceAttributeInstanceType :: EC2 -> InstanceId -> Aff (Either String InstanceAttributeInstanceType)
+describeInstanceAttributeInstanceType ec2 instanceId =
+  (toAffE $ curriedInstanceAttribute ec2 Attribute.InstanceType instanceId)
     <#> parse
   where
-  parse :: Json -> Either String (InstanceTypeAttribute ())
+  parse :: Json -> Either String InstanceAttributeInstanceType
+  parse = decodeJson <#> lmap handleError
+
+foreign import describeInstanceTypesImpl :: Fn2 EC2 (Array String) (Effect (Promise Json))
+
+curriedInstanceTypes :: EC2 -> Array InstanceType -> Effect (Promise Json)
+curriedInstanceTypes ec2 instanceTypes =
+  runFn2 describeInstanceTypesImpl
+    ec2
+    (instanceTypes <#> unwrap)
+
+describeInstanceTypes :: EC2 -> Array InstanceType -> Aff (Either String DescribeInstanceTypesResponse)
+describeInstanceTypes ec2 instanceTypes = 
+  (toAffE $ curriedInstanceTypes ec2 instanceTypes)
+    <#> parse
+  where
+  parse :: Json -> Either String (DescribeInstanceTypesResponse)
   parse = decodeJson <#> lmap handleError
