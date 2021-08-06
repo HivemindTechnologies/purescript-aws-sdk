@@ -8,7 +8,6 @@
   , "bifunctors"
   , "console"
   , "datetime"
-  , "debug"
   , "effect"
   , "either"
   , "exceptions"
