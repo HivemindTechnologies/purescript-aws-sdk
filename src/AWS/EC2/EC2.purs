@@ -10,25 +10,23 @@ module AWS.EC2
   , describeInstanceAttributeInstanceType
   , newEC2
   , describeInstanceTypes
+  , InstanceStateName(..)
   ) where
 
 import Prelude
-
 import AWS.Core.Client (makeClientHelper)
 import AWS.Core.Types (DefaultClientProps, Instance, InstanceId(..), InstanceType(..))
 import AWS.Core.Util (handleError)
-import AWS.EC2.Types (Attribute, InstanceAttributeInstanceType, DescribeInstanceTypesResponse)
 import AWS.EC2.Types (Attribute(..)) as Attribute
+import AWS.EC2.Types (Attribute, InstanceAttributeInstanceType, DescribeInstanceTypesResponse)
 import Control.Promise (Promise, toAffE)
-import Control.Promise as Promise
 import Data.Argonaut (Json, decodeJson)
 import Data.Bifunctor (lmap)
 import Data.Either (Either)
-import Data.Function.Uncurried (Fn1, Fn2, Fn3, runFn2, runFn3)
+import Data.Function.Uncurried (Fn2, Fn3, runFn2, runFn3)
 import Data.Newtype (unwrap)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
 import Justifill (justifillVia)
 import Justifill.Fillable (class Fillable)
 import Justifill.Justifiable (class Justifiable)
@@ -61,10 +59,10 @@ type InternalEC2Reservation
 type InternalEC2Response
   = { "Reservations" :: Array InternalEC2Reservation }
 
-foreign import describeInstancesImpl :: Fn1 EC2 (Effect (Promise InternalEC2Response))
+foreign import describeInstancesImpl :: Fn2 EC2 (Array InternalFilter) (Effect (Promise InternalEC2Response))
 
-describeInstances :: EC2 -> Aff (Array Instance)
-describeInstances ec2 = map toExternal $ liftEffect curried >>= Promise.toAff
+describeInstances :: EC2 -> Array Filter -> Aff (Array Instance)
+describeInstances ec2 filters = runFn2 describeInstancesImpl ec2 internalFilters # toAffE <#> toExternal
   where
   toExternal :: InternalEC2Response -> Array Instance
   toExternal response = do
@@ -75,8 +73,8 @@ describeInstances ec2 = map toExternal $ liftEffect curried >>= Promise.toAff
       , "type": InstanceType instances."InstanceType"
       }
 
-  curried :: Effect (Promise InternalEC2Response)
-  curried = describeInstancesImpl ec2
+  internalFilters :: Array InternalFilter
+  internalFilters = filters <#> toInternalFilter
 
 data ResourceTypeName
   = CustomerGateway
@@ -141,12 +139,30 @@ toInternalResourceTypeName resourceTypeName = case resourceTypeName of
   VpnConnection -> "vpn-connection"
   VpnGateway -> "vpn-gateway"
 
+data InstanceStateName
+  = Pending
+  | Running
+  | ShuttingDown
+  | Terminated
+  | Stopping
+  | Stopped
+
+toInternalInstanceStateName :: InstanceStateName -> String
+toInternalInstanceStateName state = case state of
+  Pending -> "pending"
+  Running -> "running"
+  ShuttingDown -> "shutting-down"
+  Terminated -> "terminated"
+  Stopping -> "stopping"
+  Stopped -> "stopped"
+
 data Filter
   = Key (Array String)
   | ResourceId (Array String)
   | ResourceType (Array ResourceTypeName)
   | Tag String (Array String)
   | Value (Array String)
+  | InstanceStateName (Array InstanceStateName)
 
 type InternalFilter
   = { "Name" :: String, "Values" :: Array String }
@@ -158,6 +174,7 @@ toInternalFilter filter = case filter of
   ResourceType values -> { "Name": "resource-type", "Values": values <#> toInternalResourceTypeName }
   Tag key values -> { "Name": "tag:" <> key, "Values": values }
   Value values -> { "Name": "value:", "Values": values }
+  InstanceStateName values -> { "Name": "instance-state-name", "Values": values <#> toInternalInstanceStateName }
 
 type InternalTag
   = { "ResourceType" :: String
@@ -229,7 +246,7 @@ curriedInstanceTypes ec2 instanceTypes =
     (instanceTypes <#> unwrap)
 
 describeInstanceTypes :: EC2 -> Array InstanceType -> Aff (Either String DescribeInstanceTypesResponse)
-describeInstanceTypes ec2 instanceTypes = 
+describeInstanceTypes ec2 instanceTypes =
   (toAffE $ curriedInstanceTypes ec2 instanceTypes)
     <#> parse
   where
