@@ -78,7 +78,7 @@ toInternalGetMetricStatisticsParams range statistics ms =
   , "Statistics": stat
   , "StartTime": start
   , "EndTime": end
-  , "Period": 86400 -- 1Day
+  , "Period": 3600 -- per hour
   }
   where
   nameSpace = show ms.nameSpace
