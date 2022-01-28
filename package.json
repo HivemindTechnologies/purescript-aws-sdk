@@ -12,6 +12,6 @@
     "spago": "^0.20.3"
   },
   "dependencies": {
-    "aws-sdk": "^2.665.0"
+    "aws-sdk": "^2.1066.0"
   }
 }
