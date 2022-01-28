@@ -6,7 +6,14 @@ exports.newEC2 = (params) =>
   () => new EC2(params)
 
 exports.describeInstancesImpl = (ec2, filters) =>
-  () => ec2.describeInstances({ Filters: filters }).promise()
+  () => {
+    if (filters.length == 0) {
+      return ec2.describeInstances().promise()
+    }
+    else {
+      return ec2.describeInstances({ Filters: filters }).promise()
+    }
+  }
 
 exports.describeTagsImpl = (ec2, filters) =>
   () => ec2.describeTags({ Filters: filters }).promise()
